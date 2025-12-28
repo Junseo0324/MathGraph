@@ -12,15 +12,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 
 @Composable
 fun GraphCanvas(
+    modifier: Modifier = Modifier,
     functions: List<GraphFunction>,
     intersections: List<Offset> = emptyList(), // Default empty for preview
-    modifier: Modifier = Modifier,
     viewportScale: Float,
     viewportOffsetX: Float,
     viewportOffsetY: Float,

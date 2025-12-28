@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 import androidx.compose.ui.geometry.Offset
@@ -24,6 +28,7 @@ class GraphViewModel : ViewModel() {
     private val _events = Channel<GraphEvent>()
     val events = _events.receiveAsFlow()
 
+    private var intersectionJob: Job? = null
     private val mathParser = MathParser()
     fun onAction(action: GraphAction) {
         when (action) {
@@ -49,46 +54,54 @@ class GraphViewModel : ViewModel() {
                 )
 
                 _state.update { state: GraphState ->
-                     val newState = state.copy(
+                     state.copy(
                         functions = state.functions + newFunction,
                         inputExpression = ""
                     )
-                    newState.copy(intersections = calculateIntersections(newState))
                 }
+                triggerIntersectionCalculation()
             }
             is GraphAction.OnRemoveFunction -> {
                 _state.update { state: GraphState ->
-                    val newState = state.copy(functions = state.functions.filter { f -> f.id != action.id })
-                    newState.copy(intersections = calculateIntersections(newState))
+                    state.copy(functions = state.functions.filter { f -> f.id != action.id })
                 }
+                triggerIntersectionCalculation()
             }
             is GraphAction.OnToggleVisibility -> {
                 _state.update { state: GraphState ->
-                    val newState = state.copy(functions = state.functions.map { f ->
+                     state.copy(functions = state.functions.map { f ->
                         if (f.id == action.id) f.copy(isVisible = !f.isVisible) else f
                     })
-                    newState.copy(intersections = calculateIntersections(newState))
                 }
+                triggerIntersectionCalculation()
             }
             is GraphAction.OnViewportChange -> {
                 _state.update { state: GraphState ->
-                    val newState = state.copy(
+                    state.copy(
                         viewportScale = action.scale,
                         viewportOffsetX = action.offsetX,
                         viewportOffsetY = action.offsetY
                     )
-                    // Recalculating on every move might be expensive, 
-                    // ideally throttle this or run in background. 
-                    // For now, doing it here for simplicity/correctness.
-                    newState.copy(intersections = calculateIntersections(newState))
                 }
+                triggerIntersectionCalculation()
             }
         }
     }
 
-    private fun calculateIntersections(state: GraphState): List<Offset> {
+    private fun triggerIntersectionCalculation() {
+        intersectionJob?.cancel()
+        intersectionJob = viewModelScope.launch {
+            // Optional: Debounce for smoother viewport updates
+            delay(50) 
+            val currentState = _state.value
+            val intersections = calculateIntersections(currentState)
+            _state.update { it.copy(intersections = intersections) }
+        }
+    }
+
+    private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(Dispatchers.Default) {
         val visibleFunctions = state.functions.filter { it.isVisible }
-        if (visibleFunctions.size < 2) return emptyList()
+        if (visibleFunctions.size < 2) return@withContext emptyList()
 
         // We only calculate intersections for the first pair or all combinations?
         // User said "2개 이상이면 서로 겹치는 부분". All pairs is safer.
@@ -145,7 +158,7 @@ class GraphViewModel : ViewModel() {
                 }
             }
         }
-        return intersections
+        intersections
     }
 
     private fun bisection(f1: GraphFunction, f2: GraphFunction, a: Double, b: Double, tol: Double = 1e-5): Double {
