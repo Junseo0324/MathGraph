@@ -48,15 +48,8 @@ class MathParser {
         val isCurrLeftParen = curr == "("
         
         if (isPrevNumber) {
-            if (isCurrFunction || isCurrLeftParen || (isCurrVariable && !isNumber(prev))) { 
-                // 2sin, 2(x), 2x. 
-                // But wait, if prev is "sin", it's a function, not number. 
-                // isNumber check handles digits. 
-                // But what about "xsin"? x is variable.
-                // My logic: isPrevNumber includes x/e/pi.
-                // If prev is "2", curr is "x" -> 2*x.
-                // If prev is "x", curr is "sin" -> x*sin.
-                // If prev is "2", curr is "(" -> 2*(.
+            if (isCurrFunction || isCurrLeftParen || isCurrVariable) { 
+                // 2sin, 2(x), 2x, xx, xsin
                 return true
             }
             // Special case: Number followed by Number is handled by tokenizer merging them? 

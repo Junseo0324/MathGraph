@@ -36,4 +36,15 @@ class MathParserTest {
         val fn = parser.parse("sin(x) + 1")
         assertEquals(1.0, fn(0.0), 0.001)
     }
+
+    @Test
+    fun testImplicitMultiplication() {
+        // 2x at x=3 => 6
+        val fn = parser.parse("2x")
+        assertEquals(6.0, fn(3.0), 0.001)
+
+        // 3sin(x) at x=pi/2 => 3
+        val fn2 = parser.parse("3sin(x)")
+        assertEquals(3.0, fn2(PI / 2), 0.001)
+    }
 }

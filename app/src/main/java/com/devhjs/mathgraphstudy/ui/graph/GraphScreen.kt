@@ -22,6 +22,9 @@ import com.devhjs.mathgraphstudy.ui.components.GraphCanvas
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+
 
 @Composable
 fun GraphScreen(
@@ -49,79 +52,81 @@ fun GraphScreen(
         }
 
         // Bottom: Controls
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .weight(0.4f)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.surface),
+            contentPadding = PaddingValues(16.dp)
         ) {
-             // Input Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = state.inputExpression,
-                    onValueChange = { onAction(GraphAction.OnExpressionChanged(it)) },
-                    label = { Text("수식 입력 (예: sin(x) + x^2)") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = { onAction(GraphAction.OnAddFunction) },
-                    enabled = state.inputExpression.isNotBlank()
+            // Input Row
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                    OutlinedTextField(
+                        value = state.inputExpression,
+                        onValueChange = { onAction(GraphAction.OnExpressionChanged(it)) },
+                        label = { Text("수식 입력 (예: sin(x) + x^2)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { onAction(GraphAction.OnAddFunction) },
+                        enabled = state.inputExpression.isNotBlank()
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                    }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             // Quick Input Chips
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val inputs = listOf(
-                    "sin" to "sin(", "cos" to "cos(", "tan" to "tan(",
-                    "ln" to "ln(", "log" to "log(",
-                    "√" to "sqrt(", "x²" to "^2", "^" to "^",
-                    "(" to "(", ")" to ")",
-                    "x" to "x", "+" to "+", "-" to "-", "*" to "*", "/" to "/",
-                    "π" to "pi", "e" to "e"
-                )
-                items(inputs) { (label, value) ->
-                    SuggestionChip(
-                        onClick = {
-                            onAction(GraphAction.OnExpressionChanged(state.inputExpression + value))
-                        },
-                        label = { Text(label) }
+            item {
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val inputs = listOf(
+                        "sin" to "sin(", "cos" to "cos(", "tan" to "tan(",
+                        "ln" to "ln(", "log" to "log(",
+                        "√" to "sqrt(", "x²" to "^2", "^" to "^",
+                        "(" to "(", ")" to ")",
+                        "x" to "x", "+" to "+", "-" to "-", "*" to "*", "/" to "/",
+                        "π" to "pi", "e" to "e"
                     )
+                    inputs.forEach { (label, value) ->
+                        SuggestionChip(
+                            onClick = {
+                                onAction(GraphAction.OnExpressionChanged(state.inputExpression + value))
+                            },
+                            label = { Text(label) }
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Function List
-            Text(
-                text = "함수 목록",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(top = 8.dp)
-            ) {
-                items(state.functions) { function ->
-                    FunctionItem(
-                        function = function,
-                        onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
-                        onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
-                    )
-                }
+            item {
+                Text(
+                    text = "함수 목록",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(state.functions) { function ->
+                FunctionItem(
+                    function = function,
+                    onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
+                    onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
+                )
             }
         }
     }
