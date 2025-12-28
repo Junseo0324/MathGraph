@@ -45,6 +45,7 @@ fun GraphScreen(
                 viewportScale = state.viewportScale,
                 viewportOffsetX = state.viewportOffsetX,
                 viewportOffsetY = state.viewportOffsetY,
+                intersections = state.intersections,
                 onViewportChange = { scale, offsetX, offsetY ->
                     onAction(GraphAction.OnViewportChange(scale, offsetX, offsetY))
                 }

@@ -14,8 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class GraphViewModel : ViewModel() {
+import androidx.compose.ui.geometry.Offset
+import kotlin.math.abs
 
+class GraphViewModel : ViewModel() {
     private val _state = MutableStateFlow(GraphState())
     val state: StateFlow<GraphState> = _state.asStateFlow()
 
@@ -23,11 +25,10 @@ class GraphViewModel : ViewModel() {
     val events = _events.receiveAsFlow()
 
     private val mathParser = MathParser()
-
     fun onAction(action: GraphAction) {
         when (action) {
             is GraphAction.OnExpressionChanged -> {
-                _state.update { it.copy(inputExpression = action.expression) }
+                _state.update { state: GraphState -> state.copy(inputExpression = action.expression) }
             }
             GraphAction.OnAddFunction -> {
                 val expr = _state.value.inputExpression
@@ -35,9 +36,8 @@ class GraphViewModel : ViewModel() {
                 
                 // Validate expression
                 val parsed = mathParser.parse(expr)
-                if (parsed(0.0).isNaN() && !expr.contains("x")) { // Simple check, might need better validation
-                     // Allow it for now, user will see nothing if invalid.
-                     // Or we can check if parsable.
+                if (parsed(0.0).isNaN() && !expr.contains("x")) { 
+                     // Simple validation
                 }
 
                 val newFunction = GraphFunction(
@@ -48,36 +48,112 @@ class GraphViewModel : ViewModel() {
                     calculate = parsed
                 )
 
-                _state.update {
-                    it.copy(
-                        functions = it.functions + newFunction,
-                        inputExpression = "" // Clear input
+                _state.update { state: GraphState ->
+                     val newState = state.copy(
+                        functions = state.functions + newFunction,
+                        inputExpression = ""
                     )
+                    newState.copy(intersections = calculateIntersections(newState))
                 }
             }
             is GraphAction.OnRemoveFunction -> {
-                _state.update {
-                    it.copy(functions = it.functions.filter { f -> f.id != action.id })
+                _state.update { state: GraphState ->
+                    val newState = state.copy(functions = state.functions.filter { f -> f.id != action.id })
+                    newState.copy(intersections = calculateIntersections(newState))
                 }
             }
             is GraphAction.OnToggleVisibility -> {
-                _state.update {
-                    it.copy(functions = it.functions.map { f ->
+                _state.update { state: GraphState ->
+                    val newState = state.copy(functions = state.functions.map { f ->
                         if (f.id == action.id) f.copy(isVisible = !f.isVisible) else f
                     })
+                    newState.copy(intersections = calculateIntersections(newState))
                 }
             }
             is GraphAction.OnViewportChange -> {
-                _state.update {
-                    it.copy(
+                _state.update { state: GraphState ->
+                    val newState = state.copy(
                         viewportScale = action.scale,
                         viewportOffsetX = action.offsetX,
                         viewportOffsetY = action.offsetY
                     )
+                    // Recalculating on every move might be expensive, 
+                    // ideally throttle this or run in background. 
+                    // For now, doing it here for simplicity/correctness.
+                    newState.copy(intersections = calculateIntersections(newState))
                 }
             }
         }
     }
+
+    private fun calculateIntersections(state: GraphState): List<Offset> {
+        val visibleFunctions = state.functions.filter { it.isVisible }
+        if (visibleFunctions.size < 2) return emptyList()
+
+        // We only calculate intersections for the first pair or all combinations?
+        // User said "2개 이상이면 서로 겹치는 부분". All pairs is safer.
+        // For simplicity, let's just do pairs.
+        
+        val intersections = mutableListOf<Offset>()
+        // Assume screen width approx 1080px. Center is 540.
+        val startX = (-540f - state.viewportOffsetX) / state.viewportScale
+        val endX = (540f - state.viewportOffsetX) / state.viewportScale
+        
+        val rangeStart = startX.toDouble()
+        val rangeEnd = endX.toDouble()
+        val step = 0.1 
+
+        for (i in visibleFunctions.indices) {
+            for (j in i + 1 until visibleFunctions.size) {
+                val f1 = visibleFunctions[i]
+                val f2 = visibleFunctions[j]
+                
+                var x = rangeStart
+                while (x < rangeEnd) {
+                    val y1_a = f1.calculate(x)
+                    val y2_a = f2.calculate(x)
+                    val diff_a = y1_a - y2_a
+                    
+                    val nextX = x + step
+                    val y1_b = f1.calculate(nextX)
+                    val y2_b = f2.calculate(nextX)
+                    val diff_b = y1_b - y2_b
+                    
+                    if (diff_a * diff_b < 0) {
+                        // Sign changed, root is between x and nextX
+                        val rootX = bisection(f1, f2, x, nextX)
+                        val rootY = f1.calculate(rootX)
+                        intersections.add(Offset(rootX.toFloat(), rootY.toFloat()))
+                    }
+                    x = nextX
+                }
+            }
+        }
+        return intersections
+    }
+
+    private fun bisection(f1: GraphFunction, f2: GraphFunction, a: Double, b: Double, tol: Double = 1e-5): Double {
+        var low = a
+        var high = b
+        var mid = (low + high) / 2.0
+        
+        repeat(20) { // Max iterations
+            val diffLow = f1.calculate(low) - f2.calculate(low)
+            val diffMid = f1.calculate(mid) - f2.calculate(mid)
+            
+            if (abs(diffMid) < tol) return mid
+            
+            if (diffLow * diffMid < 0) {
+                high = mid
+            } else {
+                low = mid
+            }
+            mid = (low + high) / 2.0
+        }
+        return mid
+    }
+    
+    // ... generateRandomColor ...
 
     private fun generateRandomColor(): Color {
         return Color(

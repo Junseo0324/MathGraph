@@ -7,5 +7,6 @@ data class GraphState(
     val inputExpression: String = "",
     val viewportScale: Float = 40f, // Pixels per unit
     val viewportOffsetX: Float = 0f,
-    val viewportOffsetY: Float = 0f
+    val viewportOffsetY: Float = 0f,
+    val intersections: List<androidx.compose.ui.geometry.Offset> = emptyList()
 )
