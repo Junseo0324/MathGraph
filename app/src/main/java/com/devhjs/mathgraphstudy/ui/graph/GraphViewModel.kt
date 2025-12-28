@@ -96,8 +96,10 @@ class GraphViewModel : ViewModel() {
         
         val intersections = mutableListOf<Offset>()
         // Assume screen width approx 1080px. Center is 540.
-        val startX = (-540f - state.viewportOffsetX) / state.viewportScale
-        val endX = (540f - state.viewportOffsetX) / state.viewportScale
+        // We extend range slightly to catch intersections near edges
+        val buffer = 5.0
+        val startX = ((-540f - state.viewportOffsetX) / state.viewportScale) - buffer
+        val endX = ((540f - state.viewportOffsetX) / state.viewportScale) + buffer
         
         val rangeStart = startX.toDouble()
         val rangeEnd = endX.toDouble()
@@ -119,11 +121,25 @@ class GraphViewModel : ViewModel() {
                     val y2_b = f2.calculate(nextX)
                     val diff_b = y1_b - y2_b
                     
-                    if (diff_a * diff_b < 0) {
-                        // Sign changed, root is between x and nextX
-                        val rootX = bisection(f1, f2, x, nextX)
-                        val rootY = f1.calculate(rootX)
-                        intersections.add(Offset(rootX.toFloat(), rootY.toFloat()))
+                    // Check if signs are different, OR if one of them is effectively zero
+                    // Note: diff_a * diff_b <= 0 captures sign change or exact zero.
+                    // We need to avoid duplicates if we have consecutive zeros.
+                    
+                    if (diff_a * diff_b <= 0.0) {
+                         // Likely intersection
+                         val rootX = bisection(f1, f2, x, nextX)
+                         val rootY = f1.calculate(rootX)
+                         
+                         // Validation: Is it really a root?
+                         if (abs(f1.calculate(rootX) - f2.calculate(rootX)) < 1e-3) {
+                             // Check if we already added a close point to avoid duplicates
+                             val existing = intersections.find { 
+                                 abs(it.x - rootX) < 0.2 && abs(it.y - rootY) < 0.2 
+                             }
+                             if (existing == null) {
+                                 intersections.add(Offset(rootX.toFloat(), rootY.toFloat()))
+                             }
+                         }
                     }
                     x = nextX
                 }

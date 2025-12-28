@@ -57,89 +57,118 @@ fun GraphCanvas(
         val centerX = width / 2 + viewportOffsetX
         val centerY = height / 2 + viewportOffsetY
 
-        // Draw Grid
+        // Grid & Axis Logic
         val gridColor = Color(0xFF1F2937)
         val axisColor = Color(0xFFE5E7EB)
+        val minPxPerUnit = 100f // Minimum pixels between grid lines
+        val rawStep = minPxPerUnit / viewportScale
         
-        val intersections = mutableListOf<Offset>()
-        // Assume screen width approx 1080px. Center is 540.
-        // x_start_pixel = 0. x_end_pixel = 1080.
-        // x_graph = (x_pixel - (width/2 + offsetX)) / scale
-        // x_start_graph = (0 - (540 + offsetX)) / scale
-        // x_end_graph = (1080 - (540 + offsetX)) / scale
+        // Find closest nice step: 1, 2, 5, 10, 20...
+        // Restricted to Integers as requested
+        var gridStep = 1
+        val multipliers = listOf(2, 5, 10)
+        var mIdx = 0
+        while (gridStep < rawStep) {
+            val multiplier = multipliers[mIdx % multipliers.size]
+            if (mIdx < multipliers.size) {
+                 gridStep = multiplier // 2, 5, 10
+            } else {
+                 // 20, 50, 100...
+                 // logic: 1->2->5->10->20->50->100
+                 // current simple logic: just multiply by 10 every 3 steps?
+                 // Let's keep it simple: power of 10 times 1, 2, 5.
+                 var p10 = 1
+                 var tempIdx = mIdx
+                 while (tempIdx >= 3) {
+                     p10 *= 10
+                     tempIdx -= 3
+                 }
+                 gridStep = multipliers[tempIdx] * p10
+            }
+            mIdx++
+        }
         
-        val startX = (-540f - viewportOffsetX) / viewportScale
-        val endX = (540f - viewportOffsetX) / viewportScale
+        val gridStepPx = gridStep * viewportScale
+
+        // Vertical lines (X-Axis)
+        // Start from first multiple of gridStep near left edge
+        // Left edge x in graph units:
+        val leftGraphX = -(centerX / viewportScale)
+        val firstGridX = (kotlin.math.ceil(leftGraphX / gridStep) * gridStep).toInt()
         
-        val rangeStart = startX.toDouble()
-        val rangeEnd = endX.toDouble()
-        
-        // Vertical lines
-        if (viewportScale > 1f) {
-            // Draw Vertical Grid & X-Axis Labels
-            var x = (centerX % viewportScale)
-            if (x < 0) x += viewportScale
+        var currentGridX = firstGridX.toFloat()
+        while ((currentGridX * viewportScale) + centerX < width) {
+            val xPx = (currentGridX * viewportScale) + centerX
             
-            while (x < width) {
+            // Draw Line
+            if (xPx >= 0 && xPx <= width) {
                 drawLine(
                     color = gridColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, height),
+                    start = Offset(xPx, 0f),
+                    end = Offset(xPx, height),
                     strokeWidth = 1f
                 )
                 
-                // Draw X label
-                // Value at x: (x - centerX) / scale
-                // Only draw every 2nd or 5th based on scale to avoid clutter?
-                // For now draw every grid line but skip close to 0 if it overlaps Y axis
-                val value = (x - centerX) / viewportScale
-                if (kotlin.math.abs(value) > 0.1) { // Skip near 0
-                     drawContext.canvas.nativeCanvas.drawText(
-                        String.format("%.1f", value),
-                        x,
-                        centerY + 40f, // Below axis
+                // Draw Label (Int)
+                if (kotlin.math.abs(currentGridX) > 0.001f) { // Skip 0
+                    drawContext.canvas.nativeCanvas.drawText(
+                        "${currentGridX.toInt()}",
+                        xPx,
+                        centerY + 40f,
                         textPaint
                     )
                 }
-
-                x += viewportScale
             }
+            currentGridX += gridStep
+        }
 
-            // Draw Horizontal Grid & Y-Axis Labels
-            var y = (centerY % viewportScale)
-            if (y < 0) y += viewportScale
+        // Horizontal lines (Y-Axis)
+        // Top edge y in graph units.
+        // y_graph = -(y_px - centerY) / scale
+        // y_px = 0 => y_graph = centerY / scale
+        // y_px = height => y_graph = (centerY - height) / scale
+        // We iterate from top (positive Y) to bottom (negative Y) or vice versa?
+        // Let's iterate normally.
+        // Top graph Y is roughly (centerY / scale). Bottom is (centerY - height)/scale.
+        
+        // Let's start from bottom-most visible grid line? 
+        // Or just scan visible range.
+        val topGraphY = centerY / viewportScale
+        val bottomGraphY = (centerY - height) / viewportScale
+        
+        // Snap to grid
+        var currentGridY = (kotlin.math.floor(bottomGraphY / gridStep) * gridStep).toInt().toFloat()
+        
+        while (currentGridY <= topGraphY + gridStep) {
+            val yPx = centerY - (currentGridY * viewportScale)
             
-            while (y < height) {
+            if (yPx >= 0 && yPx <= height) {
                 drawLine(
                     color = gridColor,
-                    start = Offset(0f, y),
-                    end = Offset(width, y),
+                    start = Offset(0f, yPx),
+                    end = Offset(width, yPx),
                     strokeWidth = 1f
                 )
                 
-                 val value = -(y - centerY) / viewportScale
-                 if (kotlin.math.abs(value) > 0.1) {
-                     drawContext.canvas.nativeCanvas.drawText(
-                        String.format("%.1f", value),
-                        centerX - 40f, // Left of axis
-                        y + 10f, // Center vertically roughly
+                if (kotlin.math.abs(currentGridY) > 0.001f) {
+                    drawContext.canvas.nativeCanvas.drawText(
+                        "${currentGridY.toInt()}",
+                        centerX - 40f,
+                        yPx + 10f,
                         textPaint
                     )
-                 }
-
-                y += viewportScale
+                }
             }
+            currentGridY += gridStep
         }
 
-        // Draw Axes
-        // X-Axis
+        // Draw Axes (Main X/Y)
         drawLine(
             color = axisColor,
             start = Offset(0f, centerY),
             end = Offset(width, centerY),
             strokeWidth = 2f
         )
-        // Y-Axis
         drawLine(
             color = axisColor,
             start = Offset(centerX, 0f),
