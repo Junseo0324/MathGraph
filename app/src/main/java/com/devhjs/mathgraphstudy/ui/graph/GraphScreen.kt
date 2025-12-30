@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
@@ -54,27 +55,28 @@ fun GraphScreen(
 ) {
     val configuration = LocalConfiguration.current
     val view = LocalView.current
-    
+
     DisposableEffect(configuration.orientation) {
         val window = (view.context as? android.app.Activity)?.window
         if (window != null) {
             val insetsController = WindowCompat.getInsetsController(window, view)
             if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 insetsController.hide(WindowInsetsCompat.Type.systemBars())
-                insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                insetsController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             } else {
                 insetsController.show(WindowInsetsCompat.Type.systemBars())
             }
         }
         onDispose {
-             // Ensure bars are shown when leaving screen or composition if needed, 
-             // though rotation usually handles it by recomposing or Activity recreation.
-             // But valid to reset safely if orientation changes back.
-             val windowDispose = (view.context as? android.app.Activity)?.window
-             if (windowDispose != null) {
-                 val controller = WindowCompat.getInsetsController(windowDispose, view)
-                 controller.show(WindowInsetsCompat.Type.systemBars())
-             }
+            // Ensure bars are shown when leaving screen or composition if needed,
+            // though rotation usually handles it by recomposing or Activity recreation.
+            // But valid to reset safely if orientation changes back.
+            val windowDispose = (view.context as? android.app.Activity)?.window
+            if (windowDispose != null) {
+                val controller = WindowCompat.getInsetsController(windowDispose, view)
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
@@ -102,10 +104,9 @@ fun GraphContentPortrait(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Top: Graph Area
         Box(
             modifier = Modifier
-                .weight(0.6f)
+                .weight(0.5f)
                 .fillMaxWidth()
         ) {
             GraphCanvas(
@@ -120,69 +121,53 @@ fun GraphContentPortrait(
             )
         }
 
-        // Bottom: Controls
         LazyColumn(
             modifier = Modifier
-                .weight(0.4f)
+                .weight(0.5f)
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface),
             contentPadding = PaddingValues(16.dp)
         ) {
-            // Input Row
+            // Mode Toggle
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    OutlinedTextField(
-                        value = state.inputExpression,
-                        onValueChange = { onAction(GraphAction.OnExpressionChanged(it)) },
-                        label = { Text("수식 입력 (예: sin(x) + x^2)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = { onAction(GraphAction.OnAddFunction) },
-                        enabled = state.inputExpression.isNotBlank()
+                    androidx.compose.material3.TabRow(
+                        selectedTabIndex = if (state.isBeginnerMode) 1 else 0,
+                        modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
                     ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Quick Input Chips
-            item {
-                @OptIn(ExperimentalLayoutApi::class)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val inputs = listOf(
-                        "sin" to "sin(", "cos" to "cos(", "tan" to "tan(",
-                        "ln" to "ln(", "log" to "log(",
-                        "√" to "sqrt(", "x²" to "^2", "^" to "^",
-                        "(" to "(", ")" to ")",
-                        "x" to "x", "+" to "+", "-" to "-", "*" to "*", "/" to "/",
-                        "π" to "pi", "e" to "e"
-                    )
-                    inputs.forEach { (label, value) ->
-                        SuggestionChip(
-                            onClick = {
-                                onAction(GraphAction.OnExpressionChanged(state.inputExpression + value))
-                            },
-                            label = { Text(label) }
+                        androidx.compose.material3.Tab(
+                            selected = !state.isBeginnerMode,
+                            onClick = { if (state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
+                            text = { Text("고급 모드") }
+                        )
+                        androidx.compose.material3.Tab(
+                            selected = state.isBeginnerMode,
+                            onClick = { if (!state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
+                            text = { Text("초보자 모드") }
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Function List
+            if (state.isBeginnerMode) {
+                // Beginner Mode UI
+                item {
+                    BeginnerModeInput(state, onAction)
+                }
+            } else {
+                // Advanced Mode UI
+                item {
+                    AdvancedModeInput(state, onAction)
+                }
+            }
+            
             item {
-                Text(
+                 Spacer(modifier = Modifier.height(16.dp))
+                 Text(
                     text = "함수 목록",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -199,6 +184,186 @@ fun GraphContentPortrait(
             }
         }
     }
+}
+
+@Composable
+fun AdvancedModeInput(
+    state: GraphState,
+    onAction: (GraphAction) -> Unit
+) {
+    Column {
+         Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = state.inputExpression,
+                onValueChange = { onAction(GraphAction.OnExpressionChanged(it)) },
+                label = { Text("수식 입력 (예: sin(x) + x^2)") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = { onAction(GraphAction.OnAddFunction) },
+                enabled = state.inputExpression.text.isNotBlank()
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        @OptIn(ExperimentalLayoutApi::class)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val inputs = listOf(
+                Triple("sin", "sin()", 4),
+                Triple("cos", "cos()", 4),
+                Triple("tan", "tan()", 4),
+                Triple("ln", "ln()", 3),
+                Triple("log", "log()", 4),
+                Triple("√", "sqrt()", 5),
+                Triple("x²", "^2", 2),
+                Triple("^", "^", 1),
+                Triple("(", "(", 1),
+                Triple(")", ")", 1),
+                Triple("x", "x", 1),
+                Triple("+", "+", 1),
+                Triple("-", "-", 1),
+                Triple("*", "*", 1),
+                Triple("/", "/", 1),
+                Triple("π", "pi", 2),
+                Triple("e", "e", 1)
+            )
+            inputs.forEach { (label, value, offset) ->
+                SuggestionChip(
+                    onClick = {
+                        onAction(GraphAction.OnInsertSymbol(value, offset))
+                    },
+                    label = { Text(label) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BeginnerModeInput(
+    state: GraphState,
+    onAction: (GraphAction) -> Unit
+) {
+    Column {
+        Text("함수 타입 선택", style = MaterialTheme.typography.labelLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            BeginnerFunctionType.values().forEach { type ->
+                val isSelected = state.beginnerFunctionType == type
+                SuggestionChip(
+                    onClick = { onAction(GraphAction.OnBeginnerTypeChanged(type)) },
+                    label = { 
+                        Text(
+                            text = type.displayName,
+                            fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
+                        ) 
+                    },
+                    colors = androidx.compose.material3.SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                        labelColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text("계수 입력", style = MaterialTheme.typography.labelLarge)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        CoefficientForm(state, onAction)
+
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = { onAction(GraphAction.OnAddFunction) },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("함수 추가")
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(imageVector = Icons.Default.Add, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("y =", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.width(8.dp))
+
+        when (state.beginnerFunctionType) {
+            BeginnerFunctionType.LINEAR -> {
+                // y = ax + b
+                CoefficientInput(state, "a", onAction)
+                Text("x +", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "b", onAction)
+            }
+            BeginnerFunctionType.QUADRATIC -> {
+                // y = ax^2 + bx + c
+                CoefficientInput(state, "a", onAction)
+                Text("x² +", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "b", onAction)
+                Text("x +", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "c", onAction)
+            }
+            BeginnerFunctionType.IRRATIONAL -> {
+                 // y = a*sqrt(x+b) + c
+                CoefficientInput(state, "a", onAction)
+                Text("√", style = MaterialTheme.typography.titleLarge)
+                Text("( x +", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "b", onAction)
+                Text(") +", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "c", onAction)
+            }
+             BeginnerFunctionType.RATIONAL -> {
+                // y = a/(x+b) + c
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                     CoefficientInput(state, "a", onAction)
+                     androidx.compose.material3.Divider(modifier = Modifier.width(40.dp), thickness = 2.dp)
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         Text("x +", style = MaterialTheme.typography.bodyLarge)
+                         CoefficientInput(state, "b", onAction)
+                     }
+                }
+                Text(" + ", style = MaterialTheme.typography.titleLarge)
+                CoefficientInput(state, "c", onAction)
+             }
+        }
+    }
+}
+
+@Composable
+fun CoefficientInput(state: GraphState, key: String, onAction: (GraphAction) -> Unit) {
+    OutlinedTextField(
+        value = state.beginnerCoefficients[key] ?: "",
+        onValueChange = { onAction(GraphAction.OnCoefficientChanged(key, it)) },
+        label = { Text(key) },
+        modifier = Modifier
+            .width(60.dp)
+            .padding(horizontal = 4.dp),
+        singleLine = true,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+        )
+    )
 }
 
 @Composable
@@ -227,15 +392,15 @@ fun FunctionItem(
                     .size(16.dp)
                     .background(function.color, shape = MaterialTheme.shapes.small)
             )
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             Text(
                 text = "y = ${function.expression}",
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge
             )
-            
+
             IconButton(onClick = onToggleVisibility) {
                 Icon(
                     imageVector = if (function.isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
@@ -243,7 +408,7 @@ fun FunctionItem(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -264,13 +429,11 @@ fun GraphScreenPreview() {
     )
     val sampleState = GraphState(
         functions = sampleFunctions,
-        inputExpression = "cos(x)"
+        inputExpression = androidx.compose.ui.text.input.TextFieldValue("cos(x)")
     )
-    
-    MaterialTheme {
-        GraphScreen(
-            state = sampleState,
-            onAction = {}
-        )
-    }
+
+    GraphScreen(
+        state = sampleState,
+        onAction = {}
+    )
 }

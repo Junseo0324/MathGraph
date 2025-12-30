@@ -10,17 +10,19 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import kotlin.math.abs
 
 @Composable
 fun GraphCanvas(
     modifier: Modifier = Modifier,
     functions: List<GraphFunction>,
-    intersections: List<Offset> = emptyList(), // Default empty for preview
+    intersections: List<Offset> = emptyList(),
     viewportScale: Float,
     viewportOffsetX: Float,
     viewportOffsetY: Float,
@@ -31,7 +33,7 @@ fun GraphCanvas(
     val currentOffsetY by rememberUpdatedState(viewportOffsetY)
     val currentOnViewportChange by rememberUpdatedState(onViewportChange)
 
-    val textPaint = androidx.compose.ui.graphics.Paint().asFrameworkPaint().apply {
+    val textPaint = Paint().asFrameworkPaint().apply {
         isAntiAlias = true
         textSize = 30f
         color = android.graphics.Color.WHITE
@@ -41,7 +43,7 @@ fun GraphCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A)) // Dark background like sample
+            .background(Color(0xFF0F172A))
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     val newScale = (currentScale * zoom).coerceIn(10f, 500f)
@@ -57,14 +59,11 @@ fun GraphCanvas(
         val centerX = width / 2 + viewportOffsetX
         val centerY = height / 2 + viewportOffsetY
 
-        // Grid & Axis Logic
         val gridColor = Color(0xFF1F2937)
         val axisColor = Color(0xFFE5E7EB)
-        val minPxPerUnit = 100f // Minimum pixels between grid lines
+        val minPxPerUnit = 100f
         val rawStep = minPxPerUnit / viewportScale
         
-        // Find closest nice step: 1, 2, 5, 10, 20...
-        // Restricted to Integers as requested
         var gridStep = 1
         val multipliers = listOf(2, 5, 10)
         var mIdx = 0
@@ -73,10 +72,6 @@ fun GraphCanvas(
             if (mIdx < multipliers.size) {
                  gridStep = multiplier // 2, 5, 10
             } else {
-                 // 20, 50, 100...
-                 // logic: 1->2->5->10->20->50->100
-                 // current simple logic: just multiply by 10 every 3 steps?
-                 // Let's keep it simple: power of 10 times 1, 2, 5.
                  var p10 = 1
                  var tempIdx = mIdx
                  while (tempIdx >= 3) {
@@ -88,11 +83,6 @@ fun GraphCanvas(
             mIdx++
         }
         
-        val gridStepPx = gridStep * viewportScale
-
-        // Vertical lines (X-Axis)
-        // Start from first multiple of gridStep near left edge
-        // Left edge x in graph units:
         val leftGraphX = -(centerX / viewportScale)
         val firstGridX = (kotlin.math.ceil(leftGraphX / gridStep) * gridStep).toInt()
         
@@ -100,7 +90,6 @@ fun GraphCanvas(
         while ((currentGridX * viewportScale) + centerX < width) {
             val xPx = (currentGridX * viewportScale) + centerX
             
-            // Draw Line
             if (xPx >= 0 && xPx <= width) {
                 drawLine(
                     color = gridColor,
@@ -109,8 +98,7 @@ fun GraphCanvas(
                     strokeWidth = 1f
                 )
                 
-                // Draw Label (Int)
-                if (kotlin.math.abs(currentGridX) > 0.001f) { // Skip 0
+                if (abs(currentGridX) > 0.001f) {
                     drawContext.canvas.nativeCanvas.drawText(
                         "${currentGridX.toInt()}",
                         xPx,
@@ -150,7 +138,7 @@ fun GraphCanvas(
                     strokeWidth = 1f
                 )
                 
-                if (kotlin.math.abs(currentGridY) > 0.001f) {
+                if (abs(currentGridY) > 0.001f) {
                     drawContext.canvas.nativeCanvas.drawText(
                         "${currentGridY.toInt()}",
                         centerX - 40f,
@@ -177,6 +165,7 @@ fun GraphCanvas(
         )
 
         // Draw Functions
+        // Optimization: Only Draw visible functions
         functions.filter { it.isVisible }.forEach { func ->
             val path = Path()
             var started = false
@@ -187,7 +176,7 @@ fun GraphCanvas(
                 val x = (px - centerX) / viewportScale
                 val y = func.calculate(x.toDouble())
 
-                if (y.isFinite() && kotlin.math.abs(y) < 1000) {
+                if (y.isFinite() && abs(y) < 1000) {
                     val py = centerY - (y * viewportScale).toFloat()
                     
                     if (!started) {
@@ -195,7 +184,7 @@ fun GraphCanvas(
                         started = true
                     } else {
                         // Check for huge jumps (discontinuity)
-                        if (kotlin.math.abs(py - (centerY - (func.calculate(((px - step) - centerX) / viewportScale.toDouble()) * viewportScale).toFloat())) < height) {
+                        if (abs(py - (centerY - (func.calculate(((px - step) - centerX) / viewportScale.toDouble()) * viewportScale).toFloat())) < height) {
                              path.lineTo(px.toFloat(), py)
                         } else {
                              path.moveTo(px.toFloat(), py)

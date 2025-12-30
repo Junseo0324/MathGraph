@@ -35,14 +35,61 @@ class GraphViewModel : ViewModel() {
             is GraphAction.OnExpressionChanged -> {
                 _state.update { state: GraphState -> state.copy(inputExpression = action.expression) }
             }
+            is GraphAction.OnInsertSymbol -> {
+                _state.update { state ->
+                    val currentTextFieldValue = state.inputExpression
+                    val currentText = currentTextFieldValue.text
+                    val selection = currentTextFieldValue.selection
+
+                    val newText = StringBuilder(currentText)
+                        .insert(selection.start, action.symbol)
+                        .toString()
+
+                    val newCursorPosition = selection.start + action.moveCursor
+                    
+                    state.copy(
+                        inputExpression = androidx.compose.ui.text.input.TextFieldValue(
+                            text = newText,
+                            selection = androidx.compose.ui.text.TextRange(newCursorPosition)
+                        )
+                    )
+                }
+            }
+            GraphAction.OnToggleMode -> {
+                _state.update { it.copy(isBeginnerMode = !it.isBeginnerMode) }
+            }
+            is GraphAction.OnBeginnerTypeChanged -> {
+                _state.update { it.copy(
+                    beginnerFunctionType = action.type,
+                    beginnerCoefficients = emptyMap() // Reset coefficients on type change
+                ) }
+            }
+            is GraphAction.OnCoefficientChanged -> {
+                _state.update { 
+                    val newCoefficients = it.beginnerCoefficients.toMutableMap()
+                    newCoefficients[action.key] = action.value
+                    it.copy(beginnerCoefficients = newCoefficients)
+                }
+            }
             GraphAction.OnAddFunction -> {
-                val expr = _state.value.inputExpression
+                val currentState = _state.value
+                val expr = if (currentState.isBeginnerMode) {
+                    constructBeginnerExpression(currentState)
+                } else {
+                    currentState.inputExpression.text
+                }
+
                 if (expr.isBlank()) return
                 
                 // Validate expression
                 val parsed = mathParser.parse(expr)
-                if (parsed(0.0).isNaN() && !expr.contains("x")) { 
-                     // Simple validation
+                try {
+                    if (parsed(0.0).isNaN() && !expr.contains("x") && !currentState.isBeginnerMode) { 
+                         // Simple validation check (weak)
+                    }
+                } catch (e: Exception) {
+                    // Ignore parsing errors for now or handle gracefully
+                    return 
                 }
 
                 val newFunction = GraphFunction(
@@ -56,7 +103,8 @@ class GraphViewModel : ViewModel() {
                 _state.update { state: GraphState ->
                      state.copy(
                         functions = state.functions + newFunction,
-                        inputExpression = ""
+                        inputExpression = if (state.isBeginnerMode) state.inputExpression else androidx.compose.ui.text.input.TextFieldValue(""),
+                        beginnerCoefficients = if (state.isBeginnerMode) emptyMap() else state.beginnerCoefficients
                     )
                 }
                 triggerIntersectionCalculation()
@@ -85,6 +133,26 @@ class GraphViewModel : ViewModel() {
                 }
                 triggerIntersectionCalculation()
             }
+        }
+    }
+
+    private fun constructBeginnerExpression(state: GraphState): String {
+        val coeffs = state.beginnerCoefficients
+        val a = coeffs["a"] ?: "1"
+        val b = coeffs["b"] ?: "0"
+        val c = coeffs["c"] ?: "0"
+
+        // Helper to handle 1 and 0 logic if needed, but for now explicitly using values is safer
+        // We will assume "a", "b", "c" are numbers. 
+        // If empty, defaults are provided.
+        // We wrap coefficients in parentheses to be safe with negative numbers? e.g. -1*x vs (-1)*x
+        // Actually, let's keep it simple.
+
+        return when (state.beginnerFunctionType) {
+            BeginnerFunctionType.LINEAR -> "($a)*x + ($b)"
+            BeginnerFunctionType.QUADRATIC -> "($a)*x^2 + ($b)*x + ($c)"
+            BeginnerFunctionType.IRRATIONAL -> "($a)*sqrt(x + ($b)) + ($c)"
+            BeginnerFunctionType.RATIONAL -> "($a)/(x + ($b)) + ($c)"
         }
     }
 
