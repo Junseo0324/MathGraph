@@ -29,6 +29,7 @@ class GraphViewModel : ViewModel() {
     val events = _events.receiveAsFlow()
 
     private var intersectionJob: Job? = null
+    private var functionAddedCount = 0
     private val mathParser = MathParser()
     fun onAction(action: GraphAction) {
         when (action) {
@@ -107,6 +108,14 @@ class GraphViewModel : ViewModel() {
                         beginnerCoefficients = if (state.isBeginnerMode) emptyMap() else state.beginnerCoefficients
                     )
                 }
+
+                functionAddedCount++
+                if (functionAddedCount % 5 == 0) {
+                    viewModelScope.launch {
+                        _events.send(GraphEvent.ShowInterstitialAd)
+                    }
+                }
+
                 triggerIntersectionCalculation()
             }
             is GraphAction.OnRemoveFunction -> {

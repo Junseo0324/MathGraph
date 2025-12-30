@@ -15,9 +15,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.devhjs.mathgraphstudy.ui.graph.GraphScreenRoot
 import com.devhjs.mathgraphstudy.ui.theme.MathGraphStudyTheme
 
+import com.devhjs.mathgraphstudy.util.AdManager
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AdManager.initialize(this)
         enableEdgeToEdge()
         setContent {
             MathGraphStudyTheme {

@@ -9,8 +9,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun GraphScreenRoot(
     viewModel: GraphViewModel = viewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is GraphEvent.ShowError -> {
+                    // Handle error (e.g. show toast)
+                }
+                GraphEvent.ShowInterstitialAd -> {
+                    if (context is android.app.Activity) {
+                        com.devhjs.mathgraphstudy.util.AdManager.showInterstitial(context)
+                    }
+                }
+            }
+        }
+    }
     
+    val state by viewModel.state.collectAsState()
+
     GraphScreen(
         state = state,
         onAction = viewModel::onAction
