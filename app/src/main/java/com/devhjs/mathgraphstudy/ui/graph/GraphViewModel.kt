@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.usecase.MathParser
+import com.devhjs.mathgraphstudy.ui.math.*
+import com.devhjs.mathgraphstudy.domain.model.math.*
+import kotlin.math.pow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,27 +36,16 @@ class GraphViewModel : ViewModel() {
     private val mathParser = MathParser()
     fun onAction(action: GraphAction) {
         when (action) {
-            is GraphAction.OnExpressionChanged -> {
-                _state.update { state: GraphState -> state.copy(inputExpression = action.expression) }
+            is GraphAction.OnInput -> {
+                 _state.update { 
+                     val newInputState = com.devhjs.mathgraphstudy.ui.math.MathInputManager.processInput(it.mathInput, action.input)
+                     it.copy(mathInput = newInputState)
+                 }
             }
-            is GraphAction.OnInsertSymbol -> {
-                _state.update { state ->
-                    val currentTextFieldValue = state.inputExpression
-                    val currentText = currentTextFieldValue.text
-                    val selection = currentTextFieldValue.selection
-
-                    val newText = StringBuilder(currentText)
-                        .insert(selection.start, action.symbol)
-                        .toString()
-
-                    val newCursorPosition = selection.start + action.moveCursor
-                    
-                    state.copy(
-                        inputExpression = androidx.compose.ui.text.input.TextFieldValue(
-                            text = newText,
-                            selection = androidx.compose.ui.text.TextRange(newCursorPosition)
-                        )
-                    )
+            is GraphAction.OnFocusChange -> {
+                _state.update { 
+                    val newInputState = com.devhjs.mathgraphstudy.ui.math.MathInputManager.onFocusChange(it.mathInput, action.path)
+                    it.copy(mathInput = newInputState)
                 }
             }
             GraphAction.OnToggleMode -> {
@@ -74,28 +66,42 @@ class GraphViewModel : ViewModel() {
             }
             GraphAction.OnAddFunction -> {
                 val currentState = _state.value
-                val expr = if (currentState.isBeginnerMode) {
-                    constructBeginnerExpression(currentState)
-                } else {
-                    currentState.inputExpression.text
-                }
+                val parsed: (Double) -> Double
+                val exprDisplay: String
 
-                if (expr.isBlank()) return
-                
-                // Validate expression
-                val parsed = mathParser.parse(expr)
-                try {
-                    if (parsed(0.0).isNaN() && !expr.contains("x") && !currentState.isBeginnerMode) { 
-                         // Simple validation check (weak)
+                var visualNode: VisualMathNode? = null
+
+                if (currentState.isBeginnerMode) {
+                    exprDisplay = constructBeginnerExpression(currentState)
+                    try {
+                        val exprNode = mathParser.parseToNode(exprDisplay)
+                        parsed = mathParser.evaluate(exprNode)
+                        // Convert domain AST -> Visual AST for nice display
+                        visualNode = exprNode.toVisualNode()
+                    } catch (e: Exception) {
+                        return
                     }
-                } catch (e: Exception) {
-                    // Ignore parsing errors for now or handle gracefully
-                    return 
+                } else {
+                    // AST Mode
+                    val root = currentState.mathInput.rootNode
+                    try {
+                        val exprNode = root.toExpressionNode()
+                        parsed = mathParser.evaluate(exprNode)
+                        exprDisplay = root.toDisplayString() 
+                        visualNode = root
+                    } catch (e: IllegalStateException) {
+                        return 
+                    } catch (e: Exception) {
+                        return
+                    }
                 }
+                
+                if (exprDisplay.isBlank()) return
 
                 val newFunction = GraphFunction(
                     id = System.currentTimeMillis().toString(),
-                    expression = expr,
+                    expression = exprDisplay,
+                    visualNode = visualNode,
                     color = generateRandomColor(),
                     isVisible = true,
                     calculate = parsed
@@ -104,7 +110,7 @@ class GraphViewModel : ViewModel() {
                 _state.update { state: GraphState ->
                      state.copy(
                         functions = state.functions + newFunction,
-                        inputExpression = if (state.isBeginnerMode) state.inputExpression else androidx.compose.ui.text.input.TextFieldValue(""),
+                        mathInput = if (state.isBeginnerMode) state.mathInput else MathInputState(),
                         beginnerCoefficients = if (state.isBeginnerMode) emptyMap() else state.beginnerCoefficients
                     )
                 }
@@ -268,5 +274,91 @@ class GraphViewModel : ViewModel() {
             blue = Random.nextInt(256),
             alpha = 255
         )
+    }
+
+    private fun VisualMathNode.toExpressionNode(): MathParser.ExpressionNode {
+        return when (this) {
+            is NumberNode -> MathParser.ExpressionNode.Constant(this.value.toDoubleOrNull() ?: 0.0)
+            is VariableNode -> MathParser.ExpressionNode.Variable(this.name)
+            is BinaryOpNode -> {
+                val leftNode = this.left.toExpressionNode()
+                val rightNode = this.right.toExpressionNode()
+                val (opFunc, symbol) = when (this.op) {
+                    MathOperator.PLUS -> ({ a: Double, b: Double -> a + b } to "+")
+                    MathOperator.MINUS -> ({ a: Double, b: Double -> a - b } to "-")
+                    MathOperator.MULTIPLY -> ({ a: Double, b: Double -> a * b } to "*")
+                    MathOperator.DIVIDE -> ({ a: Double, b: Double -> a / b } to "/")
+                    MathOperator.POWER -> ({ a: Double, b: Double -> a.pow(b) } to "^")
+                }
+                MathParser.ExpressionNode.BinaryOp(leftNode, rightNode, opFunc, symbol)
+            }
+            is FunctionNode -> {
+                val argNode = this.arg.toExpressionNode()
+                val (funcOp, symbol) = when (this.func) {
+                    MathFunction.SQRT -> ({ x: Double -> kotlin.math.sqrt(x) } to "sqrt")
+                    MathFunction.SIN -> ({ x: Double -> kotlin.math.sin(x) } to "sin")
+                    MathFunction.COS -> ({ x: Double -> kotlin.math.cos(x) } to "cos")
+                    MathFunction.TAN -> ({ x: Double -> kotlin.math.tan(x) } to "tan")
+                    MathFunction.LOG -> ({ x: Double -> kotlin.math.log10(x) } to "log")
+                    MathFunction.LN -> ({ x: Double -> kotlin.math.ln(x) } to "ln")
+                    MathFunction.ABS -> ({ x: Double -> kotlin.math.abs(x) } to "abs")
+                }
+                MathParser.ExpressionNode.UnaryOp(argNode, funcOp, symbol)
+            }
+            is PowerNode -> {
+                 val baseNode = this.base.toExpressionNode()
+                 val exponentNode = this.exponent.toExpressionNode()
+                 MathParser.ExpressionNode.BinaryOp(baseNode, exponentNode, { a, b -> a.pow(b) }, "^")
+            }
+            PlaceholderNode -> throw IllegalStateException("Placeholder in expression")
+        }
+    }
+
+    private fun MathParser.ExpressionNode.toVisualNode(): VisualMathNode {
+        return when (this) {
+            is MathParser.ExpressionNode.Constant -> {
+                val v = this.value
+                val text = if (v % 1.0 == 0.0) v.toInt().toString() else v.toString()
+                NumberNode(text)
+            }
+            is MathParser.ExpressionNode.Variable -> VariableNode(this.name)
+            is MathParser.ExpressionNode.BinaryOp -> {
+                if (this.symbol == "^") {
+                    PowerNode(
+                        base = this.left.toVisualNode(),
+                        exponent = this.right.toVisualNode()
+                    )
+                } else {
+                    val op = when (this.symbol) {
+                        "+" -> MathOperator.PLUS
+                        "-" -> MathOperator.MINUS
+                        "*" -> MathOperator.MULTIPLY
+                        "/" -> MathOperator.DIVIDE
+                        else -> MathOperator.PLUS // Fallback
+                    }
+                    BinaryOpNode(
+                        left = this.left.toVisualNode(),
+                        op = op,
+                        right = this.right.toVisualNode()
+                    )
+                }
+            }
+            is MathParser.ExpressionNode.UnaryOp -> {
+                val func = when (this.symbol) {
+                    "sqrt" -> MathFunction.SQRT
+                    "sin" -> MathFunction.SIN
+                    "cos" -> MathFunction.COS
+                    "tan" -> MathFunction.TAN
+                    "log" -> MathFunction.LOG
+                    "ln" -> MathFunction.LN
+                    "abs" -> MathFunction.ABS
+                    else -> MathFunction.SIN // Fallback
+                }
+                FunctionNode(
+                    func = func,
+                    arg = this.operand.toVisualNode()
+                )
+            }
+        }
     }
 }

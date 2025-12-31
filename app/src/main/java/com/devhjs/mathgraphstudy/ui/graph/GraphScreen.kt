@@ -1,7 +1,13 @@
 package com.devhjs.mathgraphstudy.ui.graph
 
+import com.devhjs.mathgraphstudy.ui.math.*
+import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
+import com.devhjs.mathgraphstudy.domain.model.math.*
+
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +16,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import com.devhjs.mathgraphstudy.domain.model.math.*
+import com.devhjs.mathgraphstudy.domain.model.math.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -69,9 +78,6 @@ fun GraphScreen(
             }
         }
         onDispose {
-            // Ensure bars are shown when leaving screen or composition if needed,
-            // though rotation usually handles it by recomposing or Activity recreation.
-            // But valid to reset safely if orientation changes back.
             val windowDispose = (view.context as? android.app.Activity)?.window
             if (windowDispose != null) {
                 val controller = WindowCompat.getInsetsController(windowDispose, view)
@@ -192,59 +198,151 @@ fun AdvancedModeInput(
     onAction: (GraphAction) -> Unit
 ) {
     Column {
-         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = state.inputExpression,
-                onValueChange = { onAction(GraphAction.OnExpressionChanged(it)) },
-                label = { Text("수식 입력 (예: sin(x) + x^2)") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = { onAction(GraphAction.OnAddFunction) },
-                enabled = state.inputExpression.text.isNotBlank()
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+         // Visual AST Panel
+         Box(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .height(80.dp)
+                 .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                 .padding(8.dp),
+             contentAlignment = Alignment.CenterStart
+         ) {
+             Row(
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .horizontalScroll(rememberScrollState())
+                     .padding(horizontal = 4.dp),
+                 verticalAlignment = Alignment.CenterVertically
+             ) {
+                 com.devhjs.mathgraphstudy.ui.math.MathNodeView(
+                     node = state.mathInput.rootNode,
+                     currentPath = emptyList(),
+                     focusPath = state.mathInput.focusPath,
+                     onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
+                 )
+             }
+         }
+         
+         Spacer(modifier = Modifier.height(8.dp))
+         
+         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+             Button(
+                 onClick = { onAction(GraphAction.OnAddFunction) },
+                 enabled = state.mathInput.rootNode !is PlaceholderNode
+             ) {
+                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                 Spacer(modifier = Modifier.width(4.dp))
+                 Text("추가")
+             }
+         }
 
-        @OptIn(ExperimentalLayoutApi::class)
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+         Spacer(modifier = Modifier.height(8.dp))
+
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val inputs = listOf(
-                Triple("sin", "sin()", 4),
-                Triple("cos", "cos()", 4),
-                Triple("tan", "tan()", 4),
-                Triple("ln", "ln()", 3),
-                Triple("log", "log()", 4),
-                Triple("√", "sqrt()", 5),
-                Triple("x²", "^2", 2),
-                Triple("^", "^", 1),
-                Triple("(", "(", 1),
-                Triple(")", ")", 1),
-                Triple("x", "x", 1),
-                Triple("+", "+", 1),
-                Triple("-", "-", 1),
-                Triple("*", "*", 1),
-                Triple("/", "/", 1),
-                Triple("π", "pi", 2),
-                Triple("e", "e", 1)
-            )
-            inputs.forEach { (label, value, offset) ->
-                SuggestionChip(
-                    onClick = {
-                        onAction(GraphAction.OnInsertSymbol(value, offset))
-                    },
-                    label = { Text(label) }
-                )
+            // Helper to create a row of buttons
+            @Composable
+            fun buttonRow(items: List<String>) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items.forEach { label ->
+                        SuggestionChip(
+                            onClick = { 
+                                val input = when(label) {
+                                    "×" -> "*"
+                                    "÷" -> "/"
+                                    "𝑥" -> "x"
+                                    else -> label
+                                }
+                                onAction(GraphAction.OnInput(input))
+                            },
+                            label = { 
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                ) 
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+            
+            // Row 1: Functions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                 listOf("sin", "cos", "tan", "log", "ln").forEach { label ->
+                     SuggestionChip(
+                         onClick = { onAction(GraphAction.OnInput(label)) },
+                         label = { Text(label) },
+                         modifier = Modifier.weight(1f)
+                     )
+                 }
+            }
+
+            // Row 2
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("7", "8", "9", "÷", "√").forEach { label ->
+                    SuggestionChip(
+                        onClick = { 
+                            val input = if (label == "÷") "/" else label
+                             onAction(GraphAction.OnInput(input))
+                        },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            
+            // Row 3
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("4", "5", "6", "×", "^").forEach { label ->
+                     SuggestionChip(
+                        onClick = { 
+                            val input = if (label == "×") "*" else label
+                             onAction(GraphAction.OnInput(input))
+                        },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Row 4
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("1", "2", "3", "-", "⌫").forEach { label -> 
+                     SuggestionChip(
+                        onClick = { 
+                            val input = if (label == "⌫") "DEL" else label
+                            onAction(GraphAction.OnInput(input)) 
+                        },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Row 5
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("0", ".", "x", "+", "→").forEach { label ->
+                     SuggestionChip(
+                        onClick = { onAction(GraphAction.OnInput(label)) },
+                        label = { 
+                            Text(
+                                if(label == "x") "𝑥" else label, // Italic x
+                                fontStyle = if(label == "x") androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
+                            ) 
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
@@ -337,7 +435,7 @@ fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
                 // y = a/(x+b) + c
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                      CoefficientInput(state, "a", onAction)
-                     androidx.compose.material3.Divider(modifier = Modifier.width(40.dp), thickness = 2.dp)
+                     androidx.compose.material3.HorizontalDivider(modifier = Modifier.width(40.dp), thickness = 2.dp)
                      Row(verticalAlignment = Alignment.CenterVertically) {
                          Text("x +", style = MaterialTheme.typography.bodyLarge)
                          CoefficientInput(state, "b", onAction)
@@ -395,11 +493,30 @@ fun FunctionItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Text(
-                text = "y = ${function.expression}",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                 if (function.visualNode != null) {
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         Text(
+                             text = "f(x) =",
+                             style = MaterialTheme.typography.labelSmall,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                             modifier = Modifier.padding(end = 4.dp)
+                         )
+                         // Limit height or properties if needed
+                        MathNodeView(
+                            node = function.visualNode,
+                            currentPath = emptyList<Int>(),
+                            focusPath = listOf(-1), // Fix: invalid path to prevent border
+                            onFocusRequest = {}
+                        )
+                     }
+                 } else {
+                     Text(
+                        text = "y = ${function.expression}",
+                        style = MaterialTheme.typography.bodyLarge
+                     )
+                 }
+            }
 
             IconButton(onClick = onToggleVisibility) {
                 Icon(
@@ -424,12 +541,12 @@ fun FunctionItem(
 @Composable
 fun GraphScreenPreview() {
     val sampleFunctions = listOf(
-        GraphFunction("1", "x^2", Color.Red),
-        GraphFunction("2", "sin(x)", Color.Blue)
+        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = Color.Red),
+        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = Color.Blue)
     )
     val sampleState = GraphState(
         functions = sampleFunctions,
-        inputExpression = androidx.compose.ui.text.input.TextFieldValue("cos(x)")
+        // mathInput is default, no inputExpression
     )
 
     GraphScreen(

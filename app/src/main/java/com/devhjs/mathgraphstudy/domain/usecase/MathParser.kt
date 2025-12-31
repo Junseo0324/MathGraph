@@ -6,18 +6,26 @@ class MathParser {
 
     fun parse(expression: String): (Double) -> Double {
         return try {
-            val tokens = tokenize(expression)
-            val processedTokens = insertImplicitMultiplication(tokens)
-            val rpn = shuntingYard(processedTokens)
-            val ast = buildAST(rpn)
-            val lambda: (Double) -> Double = { x -> ast.evaluate(x) }
+            val node = parseToNode(expression)
+            val lambda: (Double) -> Double = { x -> node.evaluate(x) }
             lambda
         } catch (e: Exception) {
             { Double.NaN }
         }
     }
 
-    private sealed interface ExpressionNode {
+    fun parseToNode(expression: String): ExpressionNode {
+        val tokens = tokenize(expression)
+        val processedTokens = insertImplicitMultiplication(tokens)
+        val rpn = shuntingYard(processedTokens)
+        return buildAST(rpn)
+    }
+
+    fun evaluate(node: ExpressionNode): (Double) -> Double {
+        return { x -> node.evaluate(x) }
+    }
+
+    sealed interface ExpressionNode {
         fun evaluate(x: Double): Double
 
         data class Constant(val value: Double) : ExpressionNode {
@@ -28,11 +36,20 @@ class MathParser {
             override fun evaluate(x: Double) = if (name == "x") x else if (name == "e") E else if (name == "pi") PI else 0.0
         }
 
-        data class BinaryOp(val left: ExpressionNode, val right: ExpressionNode, val op: (Double, Double) -> Double) : ExpressionNode {
+        data class BinaryOp(
+            val left: ExpressionNode, 
+            val right: ExpressionNode, 
+            val op: (Double, Double) -> Double,
+            val symbol: String
+        ) : ExpressionNode {
             override fun evaluate(x: Double) = op(left.evaluate(x), right.evaluate(x))
         }
 
-        data class UnaryOp(val operand: ExpressionNode, val op: (Double) -> Double) : ExpressionNode {
+        data class UnaryOp(
+            val operand: ExpressionNode, 
+            val op: (Double) -> Double,
+            val symbol: String
+        ) : ExpressionNode {
             override fun evaluate(x: Double) = op(operand.evaluate(x))
         }
     }
@@ -57,7 +74,7 @@ class MathParser {
                         "abs" -> ::abs
                         else -> { _ -> 0.0 }
                     }
-                    stack.add(ExpressionNode.UnaryOp(operand, op))
+                    stack.add(ExpressionNode.UnaryOp(operand, op, token))
                 }
                 isOperator(token) -> {
                     val right = stack.removeAt(stack.lastIndex)
@@ -70,7 +87,7 @@ class MathParser {
                         "^" -> Double::pow
                         else -> { _, _ -> 0.0 }
                     }
-                    stack.add(ExpressionNode.BinaryOp(left, right, op))
+                    stack.add(ExpressionNode.BinaryOp(left, right, op, token))
                 }
             }
         }

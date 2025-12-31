@@ -12,7 +12,7 @@ enum class BeginnerFunctionType(val displayName: String, val inputLabels: List<S
 
 data class GraphState(
     val functions: List<GraphFunction> = emptyList(),
-    val inputExpression: TextFieldValue = TextFieldValue(""),
+    val mathInput: com.devhjs.mathgraphstudy.ui.math.MathInputState = com.devhjs.mathgraphstudy.ui.math.MathInputState(),
     val isBeginnerMode: Boolean = false,
     val beginnerFunctionType: BeginnerFunctionType = BeginnerFunctionType.LINEAR,
     val beginnerCoefficients: Map<String, String> = emptyMap(),
