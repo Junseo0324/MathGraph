@@ -3,9 +3,13 @@ package com.devhjs.mathgraphstudy.ui.math
 import com.devhjs.mathgraphstudy.domain.model.math.*
  
  import androidx.compose.foundation.border
+ import androidx.compose.foundation.background
  import androidx.compose.foundation.clickable
  import androidx.compose.foundation.layout.Box
  import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
  import androidx.compose.foundation.layout.padding
  import androidx.compose.material3.MaterialTheme
  import androidx.compose.material3.Text
@@ -16,6 +20,11 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
  import androidx.compose.ui.unit.dp
  import androidx.compose.ui.unit.sp
  import androidx.compose.foundation.layout.offset
+ import androidx.compose.ui.draw.drawBehind
+ import androidx.compose.ui.graphics.Path
+ import androidx.compose.ui.graphics.drawscope.Stroke
+ import androidx.compose.ui.graphics.StrokeCap
+ import androidx.compose.ui.graphics.StrokeJoin
  
  @Composable
  fun MathNodeView(
@@ -47,20 +56,54 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
                  }
              }
              is FunctionNode -> {
-                 Row(verticalAlignment = Alignment.CenterVertically) {
-                     Text(text = node.func.symbol)
-                     if (node.func == MathFunction.SQRT) {
-                         // SQRT still uses brackets for now to distinguish scope
-                         Text("(")
-                     } else {
-                         // Space for "sin x" style
-                         androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                 if (node.func == MathFunction.SQRT) {
+                     val color = MaterialTheme.colorScheme.onSurface
+                     Row(
+                         modifier = Modifier.drawBehind {
+                             val strokeWidth = 1.5.dp.toPx()
+                             val path = Path().apply {
+                                 // Coordinates for the root symbol
+                                 // 1. Start (small tick left) - approx (2dp, 65% height)
+                                 moveTo(2.dp.toPx(), size.height * 0.65f)
+                                 // 2. Valley (bottom point) - approx (6dp, height - 2dp)
+                                 lineTo(6.dp.toPx(), size.height - 2.dp.toPx())
+                                 // 3. Beak (top point near text start) - (12dp, line_top)
+                                 // The horizontal line is drawn at y = strokeWidth/2 derived from top padding
+                                 val lineY = 4.dp.toPx() / 2 // Centered in the 4dp top spacing
+                                 lineTo(12.dp.toPx(), lineY)
+                                 // 4. Horizontal Line (Vinculum)
+                                 lineTo(size.width, lineY)
+                             }
+                             drawPath(
+                                 path = path,
+                                 color = color,
+                                 style = Stroke(
+                                     width = strokeWidth,
+                                     cap = StrokeCap.Round,
+                                     join = StrokeJoin.Round
+                                 )
+                             )
+                         }
+                     ) {
+                         // Reserve space for the root symbol on the left
+                         androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(start = 14.dp))
+                         
+                         // Content with top padding to make room for the horizontal line
+                         androidx.compose.foundation.layout.Box(
+                             modifier = Modifier.padding(top = 4.dp)
+                         ) {
+                             androidx.compose.material3.ProvideTextStyle(
+                                 value = MaterialTheme.typography.labelMedium
+                             ) {
+                                 MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                             }
+                         }
                      }
-                     
-                     MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
-                     
-                     if (node.func == MathFunction.SQRT) {
-                         Text(")")
+                 } else {
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         Text(text = node.func.symbol)
+                         androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                         MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
                      }
                  }
              }
