@@ -168,7 +168,7 @@ class GraphViewModel : ViewModel() {
             BeginnerFunctionType.LINEAR -> "($a)*x + ($b)"
             BeginnerFunctionType.QUADRATIC -> "($a)*x^2 + ($b)*x + ($c)"
             BeginnerFunctionType.CUBIC -> "($a)*x^3 + ($b)*x^2 + ($c)*x + ($d)"
-            BeginnerFunctionType.RATIONAL -> "($a)/(x + ($b)) + ($c)"
+            BeginnerFunctionType.RATIONAL -> "($a)/($b) * x + ($c)"
         }
     }
 

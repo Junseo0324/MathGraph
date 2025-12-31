@@ -437,17 +437,22 @@ fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
                 CoefficientInput(state, "d", onAction)
             }
              BeginnerFunctionType.RATIONAL -> {
-                // y = a/(x+b) + c
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                 // y = (a/b)x + c
+                 androidx.compose.foundation.layout.Column(
+                     horizontalAlignment = Alignment.CenterHorizontally,
+                     modifier = Modifier.padding(end = 4.dp)
+                 ) {
                      CoefficientInput(state, "a", onAction)
-                     androidx.compose.material3.HorizontalDivider(modifier = Modifier.width(40.dp), thickness = 2.dp)
-                     Row(verticalAlignment = Alignment.CenterVertically) {
-                         Text("x +", style = MaterialTheme.typography.bodyLarge)
-                         CoefficientInput(state, "b", onAction)
-                     }
-                }
-                Text(" + ", style = MaterialTheme.typography.titleLarge)
-                CoefficientInput(state, "c", onAction)
+                     androidx.compose.foundation.layout.Box(
+                         modifier = Modifier
+                             .width(60.dp)
+                             .height(1.dp)
+                             .background(MaterialTheme.colorScheme.onSurface)
+                     )
+                     CoefficientInput(state, "b", onAction)
+                 }
+                 Text("x +", style = MaterialTheme.typography.bodyLarge)
+                 CoefficientInput(state, "c", onAction)
              }
         }
     }

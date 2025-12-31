@@ -10,6 +10,7 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
  import androidx.compose.foundation.layout.Column
  import androidx.compose.foundation.layout.fillMaxWidth
  import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.width
  import androidx.compose.foundation.layout.padding
  import androidx.compose.material3.MaterialTheme
  import androidx.compose.material3.Text
@@ -25,6 +26,7 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
  import androidx.compose.ui.graphics.drawscope.Stroke
  import androidx.compose.ui.graphics.StrokeCap
  import androidx.compose.ui.graphics.StrokeJoin
+ import androidx.compose.foundation.layout.IntrinsicSize
  
  @Composable
  fun MathNodeView(
@@ -45,14 +47,34 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
              is NumberNode -> Text(text = node.value)
              is VariableNode -> Text(text = node.name)
              is BinaryOpNode -> {
-                 Row(verticalAlignment = Alignment.CenterVertically) {
-                     MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
-                    if (node.op == MathOperator.MULTIPLY) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 2.dp))
-                    } else {
-                        Text(text = " ${node.op.symbol} ", modifier = Modifier.padding(horizontal = 4.dp))
-                    }
-                     MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
+                 if (node.op == MathOperator.DIVIDE) {
+                     // Vertical Fraction Layout
+                     androidx.compose.foundation.layout.Column(
+                         horizontalAlignment = Alignment.CenterHorizontally,
+                         modifier = Modifier
+                             .padding(horizontal = 2.dp)
+                             .width(IntrinsicSize.Max)
+                     ) {
+                         MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
+                         // Fraction Bar
+                         androidx.compose.foundation.layout.Box(
+                             modifier = Modifier
+                                 .fillMaxWidth()
+                                 .height(1.dp)
+                                 .background(MaterialTheme.colorScheme.onSurface)
+                         )
+                         MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
+                     }
+                 } else {
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
+                        if (node.op == MathOperator.MULTIPLY) {
+                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                        } else {
+                            Text(text = " ${node.op.symbol} ", modifier = Modifier.padding(horizontal = 4.dp))
+                        }
+                         MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
+                     }
                  }
              }
              is FunctionNode -> {
