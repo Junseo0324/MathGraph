@@ -47,8 +47,8 @@ import com.devhjs.mathgraphstudy.domain.model.math.*
              is BinaryOpNode -> {
                  Row(verticalAlignment = Alignment.CenterVertically) {
                      MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
-                    if (node.op == MathOperator.MULTIPLY && node.left is NumberNode && node.right is VariableNode) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 1.dp))
+                    if (node.op == MathOperator.MULTIPLY) {
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 2.dp))
                     } else {
                         Text(text = " ${node.op.symbol} ", modifier = Modifier.padding(horizontal = 4.dp))
                     }

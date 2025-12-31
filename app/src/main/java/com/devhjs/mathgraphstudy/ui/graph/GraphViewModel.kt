@@ -156,6 +156,7 @@ class GraphViewModel : ViewModel() {
         val a = coeffs["a"] ?: "1"
         val b = coeffs["b"] ?: "0"
         val c = coeffs["c"] ?: "0"
+        val d = coeffs["d"] ?: "0"
 
         // Helper to handle 1 and 0 logic if needed, but for now explicitly using values is safer
         // We will assume "a", "b", "c" are numbers. 
@@ -166,7 +167,7 @@ class GraphViewModel : ViewModel() {
         return when (state.beginnerFunctionType) {
             BeginnerFunctionType.LINEAR -> "($a)*x + ($b)"
             BeginnerFunctionType.QUADRATIC -> "($a)*x^2 + ($b)*x + ($c)"
-            BeginnerFunctionType.IRRATIONAL -> "($a)*sqrt(x + ($b)) + ($c)"
+            BeginnerFunctionType.CUBIC -> "($a)*x^3 + ($b)*x^2 + ($c)*x + ($d)"
             BeginnerFunctionType.RATIONAL -> "($a)/(x + ($b)) + ($c)"
         }
     }
@@ -323,23 +324,47 @@ class GraphViewModel : ViewModel() {
             }
             is MathParser.ExpressionNode.Variable -> VariableNode(this.name)
             is MathParser.ExpressionNode.BinaryOp -> {
+                val leftViz = this.left.toVisualNode()
+                val rightViz = this.right.toVisualNode()
+
+                // Simplification Logic
+                val isLeftZero = leftViz is NumberNode && (leftViz.value == "0" || leftViz.value == "0.0")
+                val isLeftOne = leftViz is NumberNode && (leftViz.value == "1" || leftViz.value == "1.0")
+                val isRightZero = rightViz is NumberNode && (rightViz.value == "0" || rightViz.value == "0.0")
+
                 if (this.symbol == "^") {
-                    PowerNode(
-                        base = this.left.toVisualNode(),
-                        exponent = this.right.toVisualNode()
-                    )
+                    // x^1 -> x
+                    val isRightOne = rightViz is NumberNode && (rightViz.value == "1" || rightViz.value == "1.0")
+                    if (isRightOne) return leftViz
+                    PowerNode(base = leftViz, exponent = rightViz)
                 } else {
                     val op = when (this.symbol) {
                         "+" -> MathOperator.PLUS
                         "-" -> MathOperator.MINUS
                         "*" -> MathOperator.MULTIPLY
                         "/" -> MathOperator.DIVIDE
-                        else -> MathOperator.PLUS // Fallback
+                        else -> MathOperator.PLUS
                     }
+
+                    // 1. Addition with 0: x + 0 -> x
+                    if (op == MathOperator.PLUS && isRightZero) return leftViz
+                    if (op == MathOperator.PLUS && isLeftZero) return rightViz
+
+                    // 2. Subtraction with 0: x - 0 -> x
+                    if (op == MathOperator.MINUS && isRightZero) return leftViz
+
+                    // 3. Multiplication by 1: 1 * x -> x
+                    if (op == MathOperator.MULTIPLY && isLeftOne) return rightViz
+                    if (op == MathOperator.MULTIPLY && leftViz is NumberNode && (leftViz.value == "1" || leftViz.value == "1.0")) return rightViz
+
+                    // 4. Multiplication by 0: 0 * x -> 0 (Be careful with formatting, usually 0)
+                    if (op == MathOperator.MULTIPLY && isLeftZero) return NumberNode("0")
+                    if (op == MathOperator.MULTIPLY && isRightZero) return NumberNode("0")
+
                     BinaryOpNode(
-                        left = this.left.toVisualNode(),
+                        left = leftViz,
                         op = op,
-                        right = this.right.toVisualNode()
+                        right = rightViz
                     )
                 }
             }

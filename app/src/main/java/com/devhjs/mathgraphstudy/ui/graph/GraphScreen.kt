@@ -422,14 +422,19 @@ fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
                 Text("x +", style = MaterialTheme.typography.bodyLarge)
                 CoefficientInput(state, "c", onAction)
             }
-            BeginnerFunctionType.IRRATIONAL -> {
-                 // y = a*sqrt(x+b) + c
+            BeginnerFunctionType.CUBIC -> {
+                // y = ax^3 + bx^2 + cx + d
+                // Using a Column/Flow logic might be better if it doesn't fit, 
+                // but let's try to be compact or split into two rows implicitly if we could, 
+                // but here we are inside a Row. We'll simplify the text to fit or rely on horizontal scroll if we added it (we didn't).
+                // Let's try to fit.
                 CoefficientInput(state, "a", onAction)
-                Text("√", style = MaterialTheme.typography.titleLarge)
-                Text("( x +", style = MaterialTheme.typography.bodyLarge)
+                Text("x³+", style = MaterialTheme.typography.bodyLarge)
                 CoefficientInput(state, "b", onAction)
-                Text(") +", style = MaterialTheme.typography.bodyLarge)
+                Text("x²+", style = MaterialTheme.typography.bodyLarge)
                 CoefficientInput(state, "c", onAction)
+                Text("x+", style = MaterialTheme.typography.bodyLarge)
+                CoefficientInput(state, "d", onAction)
             }
              BeginnerFunctionType.RATIONAL -> {
                 // y = a/(x+b) + c
