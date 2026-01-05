@@ -127,67 +127,80 @@ fun GraphContentPortrait(
             )
         }
 
-        LazyColumn(
+        GraphControls(
+            state = state,
+            onAction = onAction,
             modifier = Modifier
                 .weight(0.5f)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            // Mode Toggle
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+        )
+    }
+}
+
+@Composable
+fun GraphControls(
+    state: GraphState,
+    onAction: (GraphAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surface),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        // Mode Toggle
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                androidx.compose.material3.TabRow(
+                    selectedTabIndex = if (state.isBeginnerMode) 1 else 0,
+                    modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
                 ) {
-                    androidx.compose.material3.TabRow(
-                        selectedTabIndex = if (state.isBeginnerMode) 1 else 0,
-                        modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                    ) {
-                        androidx.compose.material3.Tab(
-                            selected = !state.isBeginnerMode,
-                            onClick = { if (state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
-                            text = { Text("고급 모드") }
-                        )
-                        androidx.compose.material3.Tab(
-                            selected = state.isBeginnerMode,
-                            onClick = { if (!state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
-                            text = { Text("초보자 모드") }
-                        )
-                    }
+                    androidx.compose.material3.Tab(
+                        selected = !state.isBeginnerMode,
+                        onClick = { if (state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
+                        text = { Text("고급 모드") }
+                    )
+                    androidx.compose.material3.Tab(
+                        selected = state.isBeginnerMode,
+                        onClick = { if (!state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
+                        text = { Text("초보자 모드") }
+                    )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
             }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            if (state.isBeginnerMode) {
-                // Beginner Mode UI
-                item {
-                    BeginnerModeInput(state, onAction)
-                }
-            } else {
-                // Advanced Mode UI
-                item {
-                    AdvancedModeInput(state, onAction)
-                }
-            }
-            
+        if (state.isBeginnerMode) {
+            // Beginner Mode UI
             item {
-                 Spacer(modifier = Modifier.height(16.dp))
-                 Text(
-                    text = "함수 목록",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                BeginnerModeInput(state, onAction)
             }
+        } else {
+            // Advanced Mode UI
+            item {
+                AdvancedModeInput(state, onAction)
+            }
+        }
 
-            items(state.functions) { function ->
-                FunctionItem(
-                    function = function,
-                    onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
-                    onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
-                )
-            }
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "함수 목록",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        items(state.functions) { function ->
+            FunctionItem(
+                function = function,
+                onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
+                onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
+            )
         }
     }
 }

@@ -27,8 +27,18 @@ fun GraphScreenRoot(
     
     val state by viewModel.state.collectAsState()
 
-    GraphScreen(
-        state = state,
-        onAction = viewModel::onAction
-    )
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isTablet = configuration.smallestScreenWidthDp >= 600
+
+    if (isTablet) {
+        GraphScreenTablet(
+            state = state,
+            onAction = viewModel::onAction
+        )
+    } else {
+        GraphScreen(
+            state = state,
+            onAction = viewModel::onAction
+        )
+    }
 }
