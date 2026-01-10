@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.domain.usecase
+package com.devhjs.mathgraphstudy.domain.service
 
 import kotlin.math.E
 import kotlin.math.PI
