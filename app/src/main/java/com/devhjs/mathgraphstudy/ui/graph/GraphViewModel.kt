@@ -1,28 +1,36 @@
 package com.devhjs.mathgraphstudy.ui.graph
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
+import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
+import com.devhjs.mathgraphstudy.domain.model.math.MathFunction
+import com.devhjs.mathgraphstudy.domain.model.math.MathOperator
+import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
+import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
+import com.devhjs.mathgraphstudy.domain.model.math.PowerNode
+import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
+import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
+import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
+import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.MathParser
-import com.devhjs.mathgraphstudy.ui.math.*
-import com.devhjs.mathgraphstudy.domain.model.math.*
-import kotlin.math.pow
+import com.devhjs.mathgraphstudy.ui.math.MathInputState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.delay
+import kotlin.math.pow
 import kotlin.random.Random
-
-import androidx.compose.ui.geometry.Offset
-import kotlin.math.abs
 
 class GraphViewModel : ViewModel() {
     private val _state = MutableStateFlow(GraphState())
@@ -183,87 +191,24 @@ class GraphViewModel : ViewModel() {
         }
     }
 
-    private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(Dispatchers.Default) {
-        val visibleFunctions = state.functions.filter { it.isVisible }
-        if (visibleFunctions.size < 2) return@withContext emptyList()
+    private val calculateIntersectionsUseCase = CalculateIntersectionsUseCase()
 
-        // We only calculate intersections for the first pair or all combinations?
-        // User said "2개 이상이면 서로 겹치는 부분". All pairs is safer.
-        // For simplicity, let's just do pairs.
-        
-        val intersections = mutableListOf<Offset>()
+    private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(Dispatchers.Default) {
         // Assume screen width approx 1080px. Center is 540.
         // We extend range slightly to catch intersections near edges
         val buffer = 5.0
         val startX = ((-540f - state.viewportOffsetX) / state.viewportScale) - buffer
         val endX = ((540f - state.viewportOffsetX) / state.viewportScale) + buffer
-        
-        val rangeStart = startX.toDouble()
-        val rangeEnd = endX.toDouble()
-        val step = 0.1 
 
-        for (i in visibleFunctions.indices) {
-            for (j in i + 1 until visibleFunctions.size) {
-                val f1 = visibleFunctions[i]
-                val f2 = visibleFunctions[j]
-                
-                var x = rangeStart
-                while (x < rangeEnd) {
-                    val y1_a = f1.calculate(x)
-                    val y2_a = f2.calculate(x)
-                    val diff_a = y1_a - y2_a
-                    
-                    val nextX = x + step
-                    val y1_b = f1.calculate(nextX)
-                    val y2_b = f2.calculate(nextX)
-                    val diff_b = y1_b - y2_b
-                    
-                    // Check if signs are different, OR if one of them is effectively zero
-                    // Note: diff_a * diff_b <= 0 captures sign change or exact zero.
-                    // We need to avoid duplicates if we have consecutive zeros.
-                    
-                    if (diff_a * diff_b <= 0.0) {
-                         // Likely intersection
-                         val rootX = bisection(f1, f2, x, nextX)
-                         val rootY = f1.calculate(rootX)
-                         
-                         // Validation: Is it really a root?
-                         if (abs(f1.calculate(rootX) - f2.calculate(rootX)) < 1e-3) {
-                             // Check if we already added a close point to avoid duplicates
-                             val existing = intersections.find { 
-                                 abs(it.x - rootX) < 0.2 && abs(it.y - rootY) < 0.2 
-                             }
-                             if (existing == null) {
-                                 intersections.add(Offset(rootX.toFloat(), rootY.toFloat()))
-                             }
-                         }
-                    }
-                    x = nextX
-                }
-            }
-        }
-        intersections
-    }
+        val intersections = calculateIntersectionsUseCase(
+            functions = state.functions,
+            rangeStart = startX.toDouble(),
+            rangeEnd = endX.toDouble()
+        )
 
-    private fun bisection(f1: GraphFunction, f2: GraphFunction, a: Double, b: Double, tol: Double = 1e-5): Double {
-        var low = a
-        var high = b
-        var mid = (low + high) / 2.0
-        
-        repeat(20) { // Max iterations
-            val diffLow = f1.calculate(low) - f2.calculate(low)
-            val diffMid = f1.calculate(mid) - f2.calculate(mid)
-            
-            if (abs(diffMid) < tol) return mid
-            
-            if (diffLow * diffMid < 0) {
-                high = mid
-            } else {
-                low = mid
-            }
-            mid = (low + high) / 2.0
+        intersections.map { (x, y) ->
+            Offset(x.toFloat(), y.toFloat())
         }
-        return mid
     }
     
     // ... generateRandomColor ...
