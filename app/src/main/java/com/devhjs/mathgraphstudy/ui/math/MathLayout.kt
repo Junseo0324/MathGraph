@@ -30,6 +30,16 @@ import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
  import androidx.compose.ui.graphics.StrokeJoin
  import androidx.compose.foundation.layout.IntrinsicSize
  
+ /**
+  * [VisualMathNode] 트리를 재귀적으로 순회하며 화면에 그리는 Jetpack Compose 컴포넌트입니다.
+  *
+  * 주요 기능:
+  * 1. 노드 타입(숫자, 변수, 이항 연산, 함수, 거듭제곱)에 따라 적절한 UI 레이아웃을 구성합니다.
+  * 2. 분수(나눗셈)는 세로로 배치하고, 거듭제곱은 위첨자로 배치합니다.
+  * 3. 루트(sqrt) 기호는 [drawBehind]를 사용하여 직접 캔버스에 그립니다.
+  * 4. 현재 포커스 된 노드([focusPath])에 테두리를 그려 커서 위치를 표시합니다.
+  * 5. [PlaceholderNode]는 빈 박스로 표시하여 사용자가 입력을 유도합니다.
+  */
  @Composable
  fun MathNodeView(
      node: VisualMathNode,
