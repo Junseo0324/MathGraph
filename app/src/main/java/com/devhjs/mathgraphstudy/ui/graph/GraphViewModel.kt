@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
+import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
 import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
@@ -15,9 +16,9 @@ import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
-import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
+import com.devhjs.mathgraphstudy.ui.math.MathInputManager
 import com.devhjs.mathgraphstudy.ui.math.MathInputState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -53,13 +54,13 @@ class GraphViewModel @Inject constructor(
         when (action) {
             is GraphAction.OnInput -> {
                  _state.update { 
-                     val newInputState = com.devhjs.mathgraphstudy.ui.math.MathInputManager.processInput(it.mathInput, action.input)
+                     val newInputState = MathInputManager.processInput(it.mathInput, action.input)
                      it.copy(mathInput = newInputState)
                  }
             }
             is GraphAction.OnFocusChange -> {
                 _state.update { 
-                    val newInputState = com.devhjs.mathgraphstudy.ui.math.MathInputManager.onFocusChange(it.mathInput, action.path)
+                    val newInputState = MathInputManager.onFocusChange(it.mathInput, action.path)
                     it.copy(mathInput = newInputState)
                 }
             }
