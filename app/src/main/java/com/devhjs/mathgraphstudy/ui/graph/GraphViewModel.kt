@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
 import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
-import com.devhjs.mathgraphstudy.domain.model.math.MathFunction
-import com.devhjs.mathgraphstudy.domain.model.math.MathOperator
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.PowerNode

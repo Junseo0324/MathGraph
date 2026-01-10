@@ -1,6 +1,8 @@
 package com.devhjs.mathgraphstudy.ui.math
 
 import com.devhjs.mathgraphstudy.domain.model.math.*
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
  
  import androidx.compose.foundation.border
  import androidx.compose.foundation.background
