@@ -11,17 +11,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Blue500,
-    secondary = Cyan400,
-    tertiary = Cyan400,
-    background = Slate950,
-    surface = Slate900,
-    surfaceVariant = Slate800,
-    onPrimary = Gray200,
-    onSecondary = Slate950,
-    onBackground = Gray200,
-    onSurface = Gray200,
-    error = Red500
+    primary = PrimaryGold,
+    primaryContainer = PrimaryGoldVariant,
+    secondary = BlueAccent,
+    tertiary = GreyAccent, // Use Grey for tertiary or keep Cyan if preferred, but user said Grey for secondary accents
+    background = BlackCharcoal,
+    surface = SurfaceCard,
+    surfaceVariant = SurfaceCard, // or slightly lighter? Keep consistent for now
+    onPrimary = BlackCharcoal, // Gold is bright, so text on it should be dark
+    onSecondary = TextPrimary,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    error = Red500,
+    outline = BorderColor,
+    outlineVariant = BorderColor // Also useful for dividers often
 )
 
 // Use the same dark scheme for light mode to enforce the unified dark design

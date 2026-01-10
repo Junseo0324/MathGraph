@@ -43,7 +43,7 @@ fun GraphCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A))
+            .background(Color(0xFF121212)) // BlackCharcoal
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     val newScale = (currentScale * zoom).coerceIn(10f, 500f)
@@ -59,8 +59,8 @@ fun GraphCanvas(
         val centerX = width / 2 + viewportOffsetX
         val centerY = height / 2 + viewportOffsetY
 
-        val gridColor = Color(0xFF1F2937)
-        val axisColor = Color(0xFFE5E7EB)
+        val gridColor = Color(0xFF252525) // GraphGrid
+        val axisColor = Color(0xFFFFFFFF) // TextPrimary
         val minPxPerUnit = 100f
         val rawStep = minPxPerUnit / viewportScale
         

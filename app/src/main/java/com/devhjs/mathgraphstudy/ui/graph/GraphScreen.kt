@@ -145,7 +145,7 @@ fun GraphControls(
 ) {
     LazyColumn(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface),
+            .background(MaterialTheme.colorScheme.background), // Use background (#121212) so Cards (#1E1E1E) stand out
         contentPadding = PaddingValues(16.dp)
     ) {
         // Mode Toggle
