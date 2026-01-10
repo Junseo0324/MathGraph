@@ -41,7 +41,7 @@ class GraphViewModel : ViewModel() {
 
     private var intersectionJob: Job? = null
     private var functionAddedCount = 0
-    private val mathParser = MathParser()
+
     fun onAction(action: GraphAction) {
         when (action) {
             is GraphAction.OnInput -> {
@@ -82,8 +82,8 @@ class GraphViewModel : ViewModel() {
                 if (currentState.isBeginnerMode) {
                     exprDisplay = constructBeginnerExpression(currentState)
                     try {
-                        val exprNode = mathParser.parseToNode(exprDisplay)
-                        parsed = mathParser.evaluate(exprNode)
+                        val exprNode = MathParser.parseToNode(exprDisplay)
+                        parsed = MathParser.evaluate(exprNode)
                         // Convert domain AST -> Visual AST for nice display
                         visualNode = exprNode.toVisualNode()
                     } catch (e: Exception) {
@@ -94,7 +94,7 @@ class GraphViewModel : ViewModel() {
                     val root = currentState.mathInput.rootNode
                     try {
                         val exprNode = root.toExpressionNode()
-                        parsed = mathParser.evaluate(exprNode)
+                        parsed = MathParser.evaluate(exprNode)
                         exprDisplay = root.toDisplayString() 
                         visualNode = root
                     } catch (e: IllegalStateException) {
@@ -191,7 +191,7 @@ class GraphViewModel : ViewModel() {
         }
     }
 
-    private val calculateIntersectionsUseCase = CalculateIntersectionsUseCase()
+
 
     private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(Dispatchers.Default) {
         // Assume screen width approx 1080px. Center is 540.
@@ -200,7 +200,7 @@ class GraphViewModel : ViewModel() {
         val startX = ((-540f - state.viewportOffsetX) / state.viewportScale) - buffer
         val endX = ((540f - state.viewportOffsetX) / state.viewportScale) + buffer
 
-        val intersections = calculateIntersectionsUseCase(
+        val intersections = CalculateIntersectionsUseCase(
             functions = state.functions,
             rangeStart = startX.toDouble(),
             rangeEnd = endX.toDouble()
