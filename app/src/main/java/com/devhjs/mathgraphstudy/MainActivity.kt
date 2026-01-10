@@ -13,6 +13,9 @@ import com.devhjs.mathgraphstudy.ui.graph.GraphScreenRoot
 import com.devhjs.mathgraphstudy.ui.theme.MathGraphStudyTheme
 import com.devhjs.mathgraphstudy.util.AdManager
 
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

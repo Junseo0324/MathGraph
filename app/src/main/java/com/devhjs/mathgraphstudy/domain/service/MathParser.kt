@@ -20,7 +20,9 @@ import kotlin.math.tan
  * 2. Shunting-yard 알고리즘을 통한 후위 표기법 변환
  * 3. AST(Abstract Syntax Tree) 구성 및 계산
  */
-object MathParser {
+import javax.inject.Inject
+
+class MathParser @Inject constructor() {
 
     /**
      * 수식 문자열을 입력받아, 실수(Double) 값을 넣어 결과를 얻을 수 있는 함수((Double) -> Double)를 반환합니다.

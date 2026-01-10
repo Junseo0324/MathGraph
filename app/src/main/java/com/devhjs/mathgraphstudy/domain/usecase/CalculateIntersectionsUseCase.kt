@@ -9,7 +9,9 @@ import kotlin.math.abs
  * 두 함수의 차이(f1(x) - f2(x))를 구하고, 부호가 바뀌는 구간을 찾은 뒤
  * 이분 탐색(Bisection method)을 통해 정밀한 교차점을 찾아냅니다.
  */
-object CalculateIntersectionsUseCase {
+import javax.inject.Inject
+
+class CalculateIntersectionsUseCase @Inject constructor() {
 
     /**
      * 주어진 범위 내에서 활성화된 함수들의 모든 교차점을 찾아 반환합니다.

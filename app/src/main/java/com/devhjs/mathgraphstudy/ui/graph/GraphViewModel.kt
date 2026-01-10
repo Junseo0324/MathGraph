@@ -18,6 +18,7 @@ import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.ui.math.MathInputState
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -29,10 +30,15 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.math.pow
 import kotlin.random.Random
 
-class GraphViewModel : ViewModel() {
+@HiltViewModel
+class GraphViewModel @Inject constructor(
+    private val mathParser: MathParser,
+    private val calculateIntersectionsUseCase: CalculateIntersectionsUseCase
+) : ViewModel() {
     private val _state = MutableStateFlow(GraphState())
     val state: StateFlow<GraphState> = _state.asStateFlow()
 
@@ -82,8 +88,8 @@ class GraphViewModel : ViewModel() {
                 if (currentState.isBeginnerMode) {
                     exprDisplay = constructBeginnerExpression(currentState)
                     try {
-                        val exprNode = MathParser.parseToNode(exprDisplay)
-                        parsed = MathParser.evaluate(exprNode)
+                        val exprNode = mathParser.parseToNode(exprDisplay)
+                        parsed = mathParser.evaluate(exprNode)
                         // Convert domain AST -> Visual AST for nice display
                         visualNode = exprNode.toVisualNode()
                     } catch (e: Exception) {
@@ -94,7 +100,7 @@ class GraphViewModel : ViewModel() {
                     val root = currentState.mathInput.rootNode
                     try {
                         val exprNode = root.toExpressionNode()
-                        parsed = MathParser.evaluate(exprNode)
+                        parsed = mathParser.evaluate(exprNode)
                         exprDisplay = root.toDisplayString() 
                         visualNode = root
                     } catch (e: IllegalStateException) {
@@ -200,7 +206,7 @@ class GraphViewModel : ViewModel() {
         val startX = ((-540f - state.viewportOffsetX) / state.viewportScale) - buffer
         val endX = ((540f - state.viewportOffsetX) / state.viewportScale) + buffer
 
-        val intersections = CalculateIntersectionsUseCase(
+        val intersections = calculateIntersectionsUseCase(
             functions = state.functions,
             rangeStart = startX.toDouble(),
             rangeEnd = endX.toDouble()

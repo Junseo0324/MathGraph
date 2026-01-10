@@ -18,7 +18,7 @@ fun VisualMathNode.toDisplayString(): String {
             if (isImplicit) {
                 "${left.toDisplayString()}${right.toDisplayString()}"
             } else {
-                "${left.toDisplayString()} ${op.symbol} ${right.toDisplayString()}"
+                "${left.toDisplayString()}${op.symbol}${right.toDisplayString()}"
             }
         }
         is FunctionNode -> {
