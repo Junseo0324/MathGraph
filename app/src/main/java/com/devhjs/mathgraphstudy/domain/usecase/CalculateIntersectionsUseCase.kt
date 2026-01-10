@@ -3,8 +3,23 @@ package com.devhjs.mathgraphstudy.domain.usecase
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import kotlin.math.abs
 
+/**
+ * 화면에 표시된 함수들의 교차점(Intersections)을 계산하는 유즈케이스입니다.
+ *
+ * 두 함수의 차이(f1(x) - f2(x))를 구하고, 부호가 바뀌는 구간을 찾은 뒤
+ * 이분 탐색(Bisection method)을 통해 정밀한 교차점을 찾아냅니다.
+ */
 class CalculateIntersectionsUseCase {
 
+    /**
+     * 주어진 범위 내에서 활성화된 함수들의 모든 교차점을 찾아 반환합니다.
+     *
+     * @param functions 검사할 함수 목록 (isVisible이 true인 것만 계산)
+     * @param rangeStart 검사할 x축 시작 범위 (Viewport minX)
+     * @param rangeEnd 검사할 x축 끝 범위 (Viewport maxX)
+     * @param step 구간을 나눌 간격 (기본값 0.1). 작을수록 정밀하지만 성능이 떨어질 수 있습니다.
+     * @return 교차점의 (x, y) 좌표 리스트
+     */
     operator fun invoke(
         functions: List<GraphFunction>,
         rangeStart: Double,
@@ -56,6 +71,16 @@ class CalculateIntersectionsUseCase {
         return intersections
     }
 
+    /**
+     * 이분 탐색법(Bisection Method)을 사용하여 두 함수가 만나는 x좌표(해)를 정밀하게 근사합니다.
+     *
+     * 두 함수의 차이 `diff(x) = f1(x) - f2(x)`가 0이 되는 지점을 찾습니다.
+     * 부호가 다른 두 지점 a, b 사이에서 중간값(mid)을 계속 좁혀가며 해를 찾습니다.
+     *
+     * @param a 구간 시작
+     * @param b 구간 끝
+     * @param tol 허용 오차 (Tolerance)
+     */
     private fun bisection(f1: GraphFunction, f2: GraphFunction, a: Double, b: Double, tol: Double = 1e-5): Double {
         var low = a
         var high = b
