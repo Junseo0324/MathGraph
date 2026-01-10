@@ -15,6 +15,7 @@ import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
+import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.ui.math.MathInputState
@@ -228,10 +229,10 @@ class GraphViewModel @Inject constructor(
         )
     }
 
-    private fun VisualMathNode.toExpressionNode(): MathParser.ExpressionNode {
+    private fun VisualMathNode.toExpressionNode(): ExpressionNode {
         return when (this) {
-            is NumberNode -> MathParser.ExpressionNode.Constant(this.value.toDoubleOrNull() ?: 0.0)
-            is VariableNode -> MathParser.ExpressionNode.Variable(this.name)
+            is NumberNode -> ExpressionNode.Constant(this.value.toDoubleOrNull() ?: 0.0)
+            is VariableNode -> ExpressionNode.Variable(this.name)
             is BinaryOpNode -> {
                 val leftNode = this.left.toExpressionNode()
                 val rightNode = this.right.toExpressionNode()
@@ -242,7 +243,7 @@ class GraphViewModel @Inject constructor(
                     MathOperator.DIVIDE -> ({ a: Double, b: Double -> a / b } to "/")
                     MathOperator.POWER -> ({ a: Double, b: Double -> a.pow(b) } to "^")
                 }
-                MathParser.ExpressionNode.BinaryOp(leftNode, rightNode, opFunc, symbol)
+                ExpressionNode.BinaryOp(leftNode, rightNode, opFunc, symbol)
             }
             is FunctionNode -> {
                 val argNode = this.arg.toExpressionNode()
@@ -255,26 +256,26 @@ class GraphViewModel @Inject constructor(
                     MathFunction.LN -> ({ x: Double -> kotlin.math.ln(x) } to "ln")
                     MathFunction.ABS -> ({ x: Double -> kotlin.math.abs(x) } to "abs")
                 }
-                MathParser.ExpressionNode.UnaryOp(argNode, funcOp, symbol)
+                ExpressionNode.UnaryOp(argNode, funcOp, symbol)
             }
             is PowerNode -> {
                  val baseNode = this.base.toExpressionNode()
                  val exponentNode = this.exponent.toExpressionNode()
-                 MathParser.ExpressionNode.BinaryOp(baseNode, exponentNode, { a, b -> a.pow(b) }, "^")
+                 ExpressionNode.BinaryOp(baseNode, exponentNode, { a, b -> a.pow(b) }, "^")
             }
             PlaceholderNode -> throw IllegalStateException("Placeholder in expression")
         }
     }
 
-    private fun MathParser.ExpressionNode.toVisualNode(): VisualMathNode {
+    private fun ExpressionNode.toVisualNode(): VisualMathNode {
         return when (this) {
-            is MathParser.ExpressionNode.Constant -> {
+            is ExpressionNode.Constant -> {
                 val v = this.value
                 val text = if (v % 1.0 == 0.0) v.toInt().toString() else v.toString()
                 NumberNode(text)
             }
-            is MathParser.ExpressionNode.Variable -> VariableNode(this.name)
-            is MathParser.ExpressionNode.BinaryOp -> {
+            is ExpressionNode.Variable -> VariableNode(this.name)
+            is ExpressionNode.BinaryOp -> {
                 val leftViz = this.left.toVisualNode()
                 val rightViz = this.right.toVisualNode()
 
@@ -319,7 +320,7 @@ class GraphViewModel @Inject constructor(
                     )
                 }
             }
-            is MathParser.ExpressionNode.UnaryOp -> {
+            is ExpressionNode.UnaryOp -> {
                 val func = when (this.symbol) {
                     "sqrt" -> MathFunction.SQRT
                     "sin" -> MathFunction.SIN
