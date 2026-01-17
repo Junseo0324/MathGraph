@@ -1,15 +1,14 @@
 package com.devhjs.mathgraphstudy.domain.usecase
 
-import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import kotlin.math.abs
-
 /**
  * 화면에 표시된 함수들의 교차점(Intersections)을 계산하는 유즈케이스입니다.
  *
  * 두 함수의 차이(f1(x) - f2(x))를 구하고, 부호가 바뀌는 구간을 찾은 뒤
  * 이분 탐색(Bisection method)을 통해 정밀한 교차점을 찾아냅니다.
  */
+import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import javax.inject.Inject
+import kotlin.math.abs
 
 class CalculateIntersectionsUseCase @Inject constructor() {
 
@@ -40,24 +39,24 @@ class CalculateIntersectionsUseCase @Inject constructor() {
 
                 var x = rangeStart
                 while (x < rangeEnd) {
-                    val y1_a = f1.calculate(x)
-                    val y2_a = f2.calculate(x)
-                    val diff_a = y1_a - y2_a
+                    val y1_a = f1.calculate(x) // 함수 1의 높이
+                    val y2_a = f2.calculate(x) // 함수 2의 높이
+                    val diff_a = y1_a - y2_a // 차이 (a)
 
                     val nextX = x + step
-                    val y1_b = f1.calculate(nextX)
-                    val y2_b = f2.calculate(nextX)
-                    val diff_b = y1_b - y2_b
+                    val y1_b = f1.calculate(nextX) // 함수 1의 높이
+                    val y2_b = f2.calculate(nextX) // 함수 2의 높이
+                    val diff_b = y1_b - y2_b // 차이 (b)
 
-                    // Check if signs are different, OR if one of them is effectively zero
+                    // 그 전 step 과 비교해서 부호가 다르면 교차했는지 확인
                     if (diff_a * diff_b <= 0.0) {
-                        // Likely intersection
-                        val rootX = bisection(f1, f2, x, nextX)
-                        val rootY = f1.calculate(rootX)
+                        // 교차했는지 확인
+                        val rootX = bisection(f1, f2, x, nextX) // 이분 탐색으로 교차점 x 찾기
+                        val rootY = f1.calculate(rootX) // 그때의 y 값
 
-                        // Validation: Is it really a root?
+                        // 실제 교차점이 있는지 체크하기
                         if (abs(f1.calculate(rootX) - f2.calculate(rootX)) < 1e-3) {
-                            // Check if we already added a close point to avoid duplicates
+                            // 리스트에 이미 가까운 값이 있다면 등록하지 않음. (중복 방지)
                             val existing = intersections.find {
                                 abs(it.first - rootX) < 0.2 && abs(it.second - rootY) < 0.2
                             }

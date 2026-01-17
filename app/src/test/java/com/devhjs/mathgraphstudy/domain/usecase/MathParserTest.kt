@@ -11,91 +11,128 @@ class MathParserTest {
 
     @Test
     fun testBasicOperations() {
-        val node = parser.parseToNode("2 + 2")
+        // Given: 간단한 덧셈 수식
+        val expression = "2 + 2"
+        
+        // When: 파싱 및 계산
+        val node = parser.parseToNode(expression)
+        
+        // Then: 결과는 4.0이어야 함
         assertEquals(4.0, node.evaluate(0.0), 0.001)
     }
 
     @Test
     fun testVariable() {
-        val node = parser.parseToNode("x^2")
+        // Given: 변수가 포함된 수식 (x^2)
+        val expression = "x^2"
+        
+        // When: 파싱 실행
+        val node = parser.parseToNode(expression)
+        
+        // Then: x값에 따라 올바른 제곱값이 나와야 함
         assertEquals(4.0, node.evaluate(2.0), 0.001)
         assertEquals(9.0, node.evaluate(3.0), 0.001)
     }
 
     @Test
     fun testFunctions() {
-        val node1 = parser.parseToNode("sin(0)")
-        assertEquals(0.0, node1.evaluate(0.0), 0.001)
+        // Given: 삼각함수 수식들
+        val expr1 = "sin(0)"
+        val expr2 = "cos(0)"
         
-        val node2 = parser.parseToNode("cos(0)")
+        // When: 각각 파싱
+        val node1 = parser.parseToNode(expr1)
+        val node2 = parser.parseToNode(expr2)
+        
+        // Then: 수학적으로 올바른 값이어야 함
+        assertEquals(0.0, node1.evaluate(0.0), 0.001)
         assertEquals(1.0, node2.evaluate(0.0), 0.001)
     }
 
     @Test
     fun testComplicated() {
-        // sin(x) + 1 at x=0 => 1
-        val node = parser.parseToNode("sin(x) + 1")
+        // Given: 복합 수식 (sin(x) + 1)
+        val expression = "sin(x) + 1"
+        
+        // When: 파싱 실행
+        val node = parser.parseToNode(expression)
+        
+        // Then: x=0일 때 결과는 1.0이어야 함
         assertEquals(1.0, node.evaluate(0.0), 0.001)
     }
 
     @Test
     fun testImplicitMultiplication() {
-        // 2x at x=3 => 6
-        val node1 = parser.parseToNode("2x")
+        // Given: 곱셈 기호가 생략된 수식들
+        val expr1 = "2x"
+        val expr2 = "3sin(x)"
+        
+        // When: 파싱 실행
+        val node1 = parser.parseToNode(expr1)
+        val node2 = parser.parseToNode(expr2)
+        
+        // Then: 암시적 곱셈이 잘 처리되어 계산되어야 함
         assertEquals(6.0, node1.evaluate(3.0), 0.001)
-
-        // 3sin(x) at x=pi/2 => 3
-        val node2 = parser.parseToNode("3sin(x)")
         assertEquals(3.0, node2.evaluate(PI / 2), 0.001)
     }
 
     @Test
     fun testTokenize() {
-        // "2x + 1" -> ["2", "x", "+", "1"]
-        val result = parser.tokenize("2x + 1")
-        assertEquals(listOf("2", "x", "+", "1"), result)
-
-        // "sin(x)" -> ["sin", "(", "x", ")"]
-        val result2 = parser.tokenize("sin(x)")
+        // Given: 테스트할 수식 문자열들
+        val expr1 = "2x + 1"
+        val expr2 = "sin(x)"
+        
+        // When: 토큰화 수행
+        val result1 = parser.tokenize(expr1)
+        val result2 = parser.tokenize(expr2)
+        
+        // Then: 예상되는 토큰 리스트와 일치해야 함
+        assertEquals(listOf("2", "x", "+", "1"), result1)
         assertEquals(listOf("sin", "(", "x", ")"), result2)
     }
 
     @Test
     fun testInsertImplicitMultiplicationStep() {
-        // "2x" -> "2", "*", "x"
-        val tokens = listOf("2", "x")
-        val result = parser.insertImplicitMultiplication(tokens)
-        assertEquals(listOf("2", "*", "x"), result)
-
-        // "x(x+1)" -> "x", "*", "(", "x", "+", "1", ")"
+        // Given: 토큰화된 리스트들
+        val tokens1 = listOf("2", "x")
         val tokens2 = listOf("x", "(", "x", "+", "1", ")")
+        
+        // When: 암시적 곱셈 추가 로직 수행
+        val result1 = parser.insertImplicitMultiplication(tokens1)
         val result2 = parser.insertImplicitMultiplication(tokens2)
+        
+        // Then: 곱셈 기호(*)가 적절한 위치에 추가되어야 함
+        assertEquals(listOf("2", "*", "x"), result1)
         assertEquals(listOf("x", "*", "(", "x", "+", "1", ")"), result2)
     }
 
     @Test
     fun testShuntingYard() {
-        // "3 + 4" -> "3", "4", "+"
-        val tokens = listOf("3", "+", "4")
-        val result = parser.shuntingYard(tokens)
-        assertEquals(listOf("3", "4", "+"), result)
-
-        // "3 + 4 * 2" -> "3", "4", "2", "*", "+"
+        // Given: 중위 표기법 토큰 리스트들
+        val tokens1 = listOf("3", "+", "4")
         val tokens2 = listOf("3", "+", "4", "*", "2")
-        val result2 = parser.shuntingYard(tokens2)
-        assertEquals(listOf("3", "4", "2", "*", "+"), result2)
-        
-        // "3 * (4 + 2)" -> "3", "4", "2", "+", "*"
         val tokens3 = listOf("3", "*", "(", "4", "+", "2", ")")
+        
+        // When: Shunting-yard 알고리즘 실행
+        val result1 = parser.shuntingYard(tokens1)
+        val result2 = parser.shuntingYard(tokens2)
         val result3 = parser.shuntingYard(tokens3)
+        
+        // Then: 올바른 후위 표기법 순서로 변환되어야 함
+        assertEquals(listOf("3", "4", "+"), result1)
+        assertEquals(listOf("3", "4", "2", "*", "+"), result2)
         assertEquals(listOf("3", "4", "2", "+", "*"), result3)
     }
 
     @Test
     fun testBuildAST() {
-        // "3 4 +" -> BinaryOp(+, CONST(3), CONST(4))
+        // Given: 후위 표기법으로 정리된 토큰 리스트 ("3 4 +")
         val rpn = listOf("3", "4", "+")
+        
+        // When: AST(계산 트리) 생성
         val node = parser.buildAST(rpn)
+        
+        // Then: 트리를 계산했을 때 결과가 7.0이어야 함
         assertEquals(7.0, node.evaluate(0.0), 0.001) 
     }
 }
