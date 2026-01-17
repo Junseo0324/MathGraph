@@ -1,6 +1,6 @@
 package com.devhjs.mathgraphstudy.domain.usecase
 
-import androidx.compose.ui.graphics.Color
+
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -18,14 +18,14 @@ class CalculateIntersectionsUseCaseTest {
             id = "1",
             expression = "x",
             calculate = { x -> x },
-            color = Color.Black,
+            color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
             expression = "-x + 2",
             calculate = { x -> -x + 2.0 },
-            color = Color.Blue,
+            color = 0xFF0000FF,
             isVisible = true
         )
 
@@ -45,14 +45,14 @@ class CalculateIntersectionsUseCaseTest {
             id = "1",
             expression = "x",
             calculate = { x -> x },
-            color = Color.Black,
+            color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
             expression = "x + 2",
             calculate = { x -> x + 2.0 },
-            color = Color.Blue,
+            color = 0xFF0000FF,
             isVisible = true
         )
 
@@ -70,14 +70,14 @@ class CalculateIntersectionsUseCaseTest {
             id = "1",
             expression = "x^2",
             calculate = { x -> x * x },
-            color = Color.Black,
+            color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
             expression = "4",
             calculate = { 4.0 },
-            color = Color.Blue,
+            color = 0xFF0000FF,
             isVisible = true
         )
 
@@ -101,14 +101,14 @@ class CalculateIntersectionsUseCaseTest {
             id = "1",
             expression = "x",
             calculate = { x -> x },
-            color = Color.Black,
+            color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
             expression = "-x",
             calculate = { x -> -x },
-            color = Color.Blue,
+            color = 0xFF0000FF,
             isVisible = false // 보이지 않음
         )
 

@@ -114,8 +114,8 @@ fun GraphScreenTablet(
 @Composable
 fun GraphScreenTabletPreview() {
     val sampleFunctions = listOf(
-        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = Color.Red),
-        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = Color.Blue)
+        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = 0xFFFF0000),
+        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = 0xFF0000FF)
     )
     val sampleState = GraphState(
         functions = sampleFunctions

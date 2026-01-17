@@ -197,7 +197,7 @@ fun GraphCanvas(
             
             drawPath(
                 path = path,
-                color = func.color,
+                color = Color(func.color),
                 style = Stroke(width = 3f)
             )
         }

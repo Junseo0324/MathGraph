@@ -221,13 +221,17 @@ class GraphViewModel @Inject constructor(
     
     // ... generateRandomColor ...
 
-    private fun generateRandomColor(): Color {
-        return Color(
-            red = Random.nextInt(256),
-            green = Random.nextInt(256),
-            blue = Random.nextInt(256),
-            alpha = 255
-        )
+    private fun generateRandomColor(): Long {
+        // ARGB format: 0xAARRGGBB
+        val alpha = 0xFF
+        val red = Random.nextInt(256)
+        val green = Random.nextInt(256)
+        val blue = Random.nextInt(256)
+        
+        return (alpha.toLong() shl 24) or 
+               (red.toLong() shl 16) or 
+               (green.toLong() shl 8) or 
+               blue.toLong()
     }
 
     private fun VisualMathNode.toExpressionNode(): ExpressionNode {

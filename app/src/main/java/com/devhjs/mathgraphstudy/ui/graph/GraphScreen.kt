@@ -506,7 +506,7 @@ fun FunctionItem(
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(function.color, shape = MaterialTheme.shapes.small)
+                    .background(Color(function.color), shape = MaterialTheme.shapes.small)
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -559,8 +559,8 @@ fun FunctionItem(
 @Composable
 fun GraphScreenPreview() {
     val sampleFunctions = listOf(
-        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = Color.Red),
-        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = Color.Blue)
+        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = 0xFFFF0000),
+        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = 0xFF0000FF)
     )
     val sampleState = GraphState(
         functions = sampleFunctions,
