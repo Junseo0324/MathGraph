@@ -1,7 +1,6 @@
 package com.devhjs.mathgraphstudy.domain.model
 
 import androidx.compose.ui.graphics.Color
-
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 
 data class GraphFunction(

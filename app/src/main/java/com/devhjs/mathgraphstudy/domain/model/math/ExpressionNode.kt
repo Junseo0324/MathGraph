@@ -5,7 +5,7 @@ import kotlin.math.PI
 
 /**
  * 계산(Evaluation)에 최적화된 노드 인터페이스입니다.
- * 시각적 표현을 위한 `VisualMathNode`와 달리, 오직 값 계산에만 집중합니다.
+ * 시각적 표현을 위한 `VisualMathNode`와 달리, 오직 값 계산에만 집중.
  */
 sealed interface ExpressionNode {
     fun evaluate(x: Double): Double

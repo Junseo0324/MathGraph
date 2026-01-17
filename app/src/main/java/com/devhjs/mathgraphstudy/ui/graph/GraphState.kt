@@ -1,6 +1,5 @@
 package com.devhjs.mathgraphstudy.ui.graph
 
-import androidx.compose.ui.text.input.TextFieldValue
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 
 enum class BeginnerFunctionType(val displayName: String, val inputLabels: List<String>) {

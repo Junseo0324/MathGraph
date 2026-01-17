@@ -1,9 +1,6 @@
 package com.devhjs.mathgraphstudy.ui.graph
 
-import com.devhjs.mathgraphstudy.ui.math.*
-import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
-import com.devhjs.mathgraphstudy.domain.model.math.*
-
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,13 +8,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import com.devhjs.mathgraphstudy.domain.model.math.*
-import com.devhjs.mathgraphstudy.domain.model.math.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +48,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.ui.components.GraphCanvas
+import com.devhjs.mathgraphstudy.ui.math.MathNodeView
 
 @Composable
 fun GraphScreen(
@@ -66,7 +61,7 @@ fun GraphScreen(
     val view = LocalView.current
 
     DisposableEffect(configuration.orientation) {
-        val window = (view.context as? android.app.Activity)?.window
+        val window = (view.context as? Activity)?.window
         if (window != null) {
             val insetsController = WindowCompat.getInsetsController(window, view)
             if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {

@@ -1,24 +1,29 @@
 package com.devhjs.mathgraphstudy.ui.graph
 
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.devhjs.mathgraphstudy.util.AdManager
 
 @Composable
 fun GraphScreenRoot(
     viewModel: GraphViewModel = viewModel()
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.runtime.LaunchedEffect(Unit) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is GraphEvent.ShowError -> {
-                    // Handle error (e.g. show toast)
+
                 }
                 GraphEvent.ShowInterstitialAd -> {
-                    if (context is android.app.Activity) {
-                        com.devhjs.mathgraphstudy.util.AdManager.showInterstitial(context)
+                    if (context is Activity) {
+                        AdManager.showInterstitial(context)
                     }
                 }
             }
@@ -27,7 +32,7 @@ fun GraphScreenRoot(
     
     val state by viewModel.state.collectAsState()
 
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val configuration = LocalConfiguration.current
     val isTablet = configuration.smallestScreenWidthDp >= 600
 
     if (isTablet) {
