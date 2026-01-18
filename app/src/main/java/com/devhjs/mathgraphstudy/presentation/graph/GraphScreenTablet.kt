@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
+import com.devhjs.mathgraphstudy.presentation.components.GraphControls
 
 @Composable
 fun GraphScreenTablet(
