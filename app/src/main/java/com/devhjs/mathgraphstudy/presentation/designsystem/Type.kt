@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.theme
+package com.devhjs.mathgraphstudy.presentation.designsystem
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

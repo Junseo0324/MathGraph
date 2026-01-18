@@ -1,7 +1,6 @@
-package com.devhjs.mathgraphstudy.ui.graph
+package com.devhjs.mathgraphstudy.presentation.graph
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
@@ -18,8 +17,8 @@ import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
-import com.devhjs.mathgraphstudy.ui.math.MathInputManager
-import com.devhjs.mathgraphstudy.ui.math.MathInputState
+import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
+import com.devhjs.mathgraphstudy.presentation.math.MathInputState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

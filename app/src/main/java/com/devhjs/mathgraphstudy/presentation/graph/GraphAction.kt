@@ -1,6 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.graph
-
-import androidx.compose.ui.text.input.TextFieldValue
+package com.devhjs.mathgraphstudy.presentation.graph
 
 sealed interface GraphAction {
     data class OnInput(val input: String) : GraphAction

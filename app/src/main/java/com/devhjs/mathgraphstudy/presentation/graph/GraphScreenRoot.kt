@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.graph
+package com.devhjs.mathgraphstudy.presentation.graph
 
 import android.app.Activity
 import androidx.compose.runtime.Composable

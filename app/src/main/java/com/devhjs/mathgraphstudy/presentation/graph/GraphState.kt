@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.graph
+package com.devhjs.mathgraphstudy.presentation.graph
 
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 
@@ -11,7 +11,7 @@ enum class BeginnerFunctionType(val displayName: String, val inputLabels: List<S
 
 data class GraphState(
     val functions: List<GraphFunction> = emptyList(),
-    val mathInput: com.devhjs.mathgraphstudy.ui.math.MathInputState = com.devhjs.mathgraphstudy.ui.math.MathInputState(),
+    val mathInput: com.devhjs.mathgraphstudy.presentation.math.MathInputState = com.devhjs.mathgraphstudy.presentation.math.MathInputState(),
     val isBeginnerMode: Boolean = false,
     val beginnerFunctionType: BeginnerFunctionType = BeginnerFunctionType.LINEAR,
     val beginnerCoefficients: Map<String, String> = emptyMap(),

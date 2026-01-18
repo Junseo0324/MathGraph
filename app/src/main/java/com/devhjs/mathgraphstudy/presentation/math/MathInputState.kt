@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.math
+package com.devhjs.mathgraphstudy.presentation.math
 
 import com.devhjs.mathgraphstudy.domain.model.math.*
  

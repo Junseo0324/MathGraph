@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.devhjs.mathgraphstudy.ui.graph.GraphScreenRoot
-import com.devhjs.mathgraphstudy.ui.theme.MathGraphStudyTheme
+import com.devhjs.mathgraphstudy.presentation.graph.GraphScreenRoot
+import com.devhjs.mathgraphstudy.presentation.designsystem.MathGraphStudyTheme
 import com.devhjs.mathgraphstudy.util.AdManager
 
 import dagger.hilt.android.AndroidEntryPoint

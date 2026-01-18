@@ -1,14 +1,15 @@
 package com.devhjs.mathgraphstudy.domain.usecase
 
+import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import javax.inject.Inject
+import kotlin.math.abs
+
 /**
  * 화면에 표시된 함수들의 교차점(Intersections)을 계산하는 유즈케이스입니다.
  *
  * 두 함수의 차이(f1(x) - f2(x))를 구하고, 부호가 바뀌는 구간을 찾은 뒤
  * 이분 탐색(Bisection method)을 통해 정밀한 교차점을 찾아냅니다.
  */
-import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import javax.inject.Inject
-import kotlin.math.abs
 
 class CalculateIntersectionsUseCase @Inject constructor() {
 

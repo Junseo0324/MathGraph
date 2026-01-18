@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.components
+package com.devhjs.mathgraphstudy.presentation.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.graph
+package com.devhjs.mathgraphstudy.presentation.graph
 
 sealed interface GraphEvent {
     data class ShowError(val message: String) : GraphEvent

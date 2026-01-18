@@ -1,4 +1,4 @@
-package com.devhjs.mathgraphstudy.ui.graph
+package com.devhjs.mathgraphstudy.presentation.graph
 
 import android.app.Activity
 import android.content.res.Configuration
@@ -49,8 +49,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
-import com.devhjs.mathgraphstudy.ui.components.GraphCanvas
-import com.devhjs.mathgraphstudy.ui.math.MathNodeView
+import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
+import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 
 @Composable
 fun GraphScreen(
@@ -222,7 +222,7 @@ fun AdvancedModeInput(
                      .padding(horizontal = 4.dp),
                  verticalAlignment = Alignment.CenterVertically
              ) {
-                 com.devhjs.mathgraphstudy.ui.math.MathNodeView(
+                 com.devhjs.mathgraphstudy.presentation.math.MathNodeView(
                      node = state.mathInput.rootNode,
                      currentPath = emptyList(),
                      focusPath = state.mathInput.focusPath,
