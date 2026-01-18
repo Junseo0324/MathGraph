@@ -49,6 +49,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
+import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 

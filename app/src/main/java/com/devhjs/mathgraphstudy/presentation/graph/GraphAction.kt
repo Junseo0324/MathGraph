@@ -1,5 +1,7 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
+import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
+
 sealed interface GraphAction {
     data class OnInput(val input: String) : GraphAction
     data class OnFocusChange(val path: List<Int>) : GraphAction

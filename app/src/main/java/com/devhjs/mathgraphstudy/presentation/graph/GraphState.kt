@@ -1,17 +1,15 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
+import androidx.compose.runtime.Immutable
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
+import com.devhjs.mathgraphstudy.presentation.math.MathInputState
 
-enum class BeginnerFunctionType(val displayName: String, val inputLabels: List<String>) {
-    LINEAR("일차", listOf("a", "b")),       // y = ax + b
-    QUADRATIC("이차", listOf("a", "b", "c")), // y = ax^2 + bx + c
-    CUBIC("삼차", listOf("a", "b", "c", "d")), // y = ax^3 + bx^2 + cx + d
-    RATIONAL("유리", listOf("a", "b", "c"))    // y = a/(x+b) + c
-}
 
+@Immutable
 data class GraphState(
     val functions: List<GraphFunction> = emptyList(),
-    val mathInput: com.devhjs.mathgraphstudy.presentation.math.MathInputState = com.devhjs.mathgraphstudy.presentation.math.MathInputState(),
+    val mathInput: MathInputState = MathInputState(),
     val isBeginnerMode: Boolean = false,
     val beginnerFunctionType: BeginnerFunctionType = BeginnerFunctionType.LINEAR,
     val beginnerCoefficients: Map<String, String> = emptyMap(),

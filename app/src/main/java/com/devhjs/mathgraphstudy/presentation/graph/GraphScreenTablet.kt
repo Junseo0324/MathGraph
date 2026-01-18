@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,8 +25,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
 
 @Composable
 fun GraphScreenTablet(
@@ -40,7 +40,6 @@ fun GraphScreenTablet(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Layer 1: Graph Canvas (Full Screen)
             GraphCanvas(
                 functions = state.functions,
                 viewportScale = state.viewportScale,
@@ -52,14 +51,12 @@ fun GraphScreenTablet(
                 }
             )
 
-            // Layer 2: Sliding Panel with Handle
             Row(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .zIndex(2f), // Higher zIndex than canvas
+                    .zIndex(2f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Handle
                 Surface(
                     onClick = { isPanelVisible.value = !isPanelVisible.value },
                     modifier = Modifier
@@ -72,14 +69,13 @@ fun GraphScreenTablet(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = if (isPanelVisible.value) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowLeft,
+                            imageVector = if (isPanelVisible.value) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = if (isPanelVisible.value) "Close Panel" else "Open Panel",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
 
-                // Panel Content
                 AnimatedVisibility(
                     visible = isPanelVisible.value,
                     enter = expandHorizontally(expandFrom = Alignment.Start),
@@ -88,7 +84,7 @@ fun GraphScreenTablet(
                     Surface(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .width(360.dp) // Fixed width for panel
+                            .width(360.dp)
                             .shadow(8.dp),
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 2.dp
