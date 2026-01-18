@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
-import com.devhjs.mathgraphstudy.presentation.graph.GraphControls
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable

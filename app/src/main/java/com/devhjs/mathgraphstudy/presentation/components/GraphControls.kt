@@ -17,9 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.devhjs.mathgraphstudy.presentation.graph.AdvancedModeInput
-import com.devhjs.mathgraphstudy.presentation.graph.BeginnerModeInput
-import com.devhjs.mathgraphstudy.presentation.graph.FunctionItem
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 

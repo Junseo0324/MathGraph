@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
-import com.devhjs.mathgraphstudy.presentation.graph.CoefficientInput
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
