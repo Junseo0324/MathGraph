@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.presentation.designsystem.BlackCharcoal
+import com.devhjs.mathgraphstudy.presentation.designsystem.GridColor
+import com.devhjs.mathgraphstudy.presentation.designsystem.TextPrimary
 import kotlin.math.abs
 
 @Composable
@@ -43,7 +46,7 @@ fun GraphCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF121212)) // BlackCharcoal
+            .background(BlackCharcoal)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     val newScale = (currentScale * zoom).coerceIn(10f, 500f)
@@ -59,8 +62,8 @@ fun GraphCanvas(
         val centerX = width / 2 + viewportOffsetX
         val centerY = height / 2 + viewportOffsetY
 
-        val gridColor = Color(0xFF252525) // GraphGrid
-        val axisColor = Color(0xFFFFFFFF) // TextPrimary
+        val gridColor = GridColor
+        val axisColor = TextPrimary
         val minPxPerUnit = 100f
         val rawStep = minPxPerUnit / viewportScale
         
@@ -70,7 +73,7 @@ fun GraphCanvas(
         while (gridStep < rawStep) {
             val multiplier = multipliers[mIdx % multipliers.size]
             if (mIdx < multipliers.size) {
-                 gridStep = multiplier // 2, 5, 10
+                 gridStep = multiplier
             } else {
                  var p10 = 1
                  var tempIdx = mIdx

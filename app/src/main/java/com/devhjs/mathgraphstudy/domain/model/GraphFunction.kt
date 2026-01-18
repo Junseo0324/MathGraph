@@ -1,8 +1,10 @@
 package com.devhjs.mathgraphstudy.domain.model
 
 
+import androidx.compose.runtime.Immutable
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 
+@Immutable
 data class GraphFunction(
     val id: String,
     val expression: String,
