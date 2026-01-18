@@ -13,20 +13,19 @@ private val DarkColorScheme = darkColorScheme(
     primary = PrimaryGold,
     primaryContainer = PrimaryGoldVariant,
     secondary = BlueAccent,
-    tertiary = GreyAccent, // Use Grey for tertiary or keep Cyan if preferred, but user said Grey for secondary accents
+    tertiary = GreyAccent,
     background = BlackCharcoal,
     surface = SurfaceCard,
-    surfaceVariant = SurfaceCard, // or slightly lighter? Keep consistent for now
-    onPrimary = BlackCharcoal, // Gold is bright, so text on it should be dark
+    surfaceVariant = SurfaceCard,
+    onPrimary = BlackCharcoal,
     onSecondary = TextPrimary,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     error = Red500,
     outline = BorderColor,
-    outlineVariant = BorderColor // Also useful for dividers often
+    outlineVariant = BorderColor
 )
 
-// Use the same dark scheme for light mode to enforce the unified dark design
 private val LightColorScheme = DarkColorScheme
 
 @Composable
