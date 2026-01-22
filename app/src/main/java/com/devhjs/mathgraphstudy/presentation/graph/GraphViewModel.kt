@@ -168,6 +168,8 @@ class GraphViewModel @Inject constructor(
                 }
                 triggerIntersectionCalculation()
             }
+            GraphAction.OnOpenLicenses,
+            GraphAction.OnCloseLicenses -> Unit
         }
     }
 

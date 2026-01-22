@@ -35,7 +35,7 @@ fun GraphScreen(
             }
         }
         onDispose {
-            val windowDispose = (view.context as? android.app.Activity)?.window
+            val windowDispose = (view.context as? Activity)?.window
             if (windowDispose != null) {
                 val controller = WindowCompat.getInsetsController(windowDispose, view)
                 controller.show(WindowInsetsCompat.Type.systemBars())

@@ -12,4 +12,6 @@ sealed interface GraphAction {
     data class OnRemoveFunction(val id: String) : GraphAction
     data class OnToggleVisibility(val id: String) : GraphAction
     data class OnViewportChange(val scale: Float, val offsetX: Float, val offsetY: Float) : GraphAction
+    object OnOpenLicenses : GraphAction
+    object OnCloseLicenses : GraphAction
 }

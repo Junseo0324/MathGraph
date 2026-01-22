@@ -16,15 +16,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable
 fun GraphControls(
-    state: GraphState,
-    onAction: (GraphAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit= {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -85,5 +87,27 @@ fun GraphControls(
                 onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
             )
         }
+
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            androidx.compose.material3.TextButton(
+                onClick = { onAction(GraphAction.OnOpenLicenses) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "오픈소스 라이선스",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
+}
+
+@Preview
+@Composable
+private fun GraphControlsPreview() {
+    GraphControls()
 }

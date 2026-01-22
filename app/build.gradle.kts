@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.aboutlibraries.plugin)
 }
 
 android {
@@ -56,6 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation("com.google.android.gms:play-services-ads:23.3.0")
+    implementation(libs.aboutlibraries.compose)
     
     // Hilt
     implementation(libs.hilt.android)
