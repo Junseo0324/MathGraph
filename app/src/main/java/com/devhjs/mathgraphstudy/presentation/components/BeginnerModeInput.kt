@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
@@ -34,21 +37,21 @@ fun BeginnerModeInput(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            BeginnerFunctionType.values().forEach { type ->
+            BeginnerFunctionType.entries.forEach { type ->
                 val isSelected = state.beginnerFunctionType == type
                 SuggestionChip(
                     onClick = { onAction(GraphAction.OnBeginnerTypeChanged(type)) },
                     label = { 
                         Text(
                             text = type.displayName,
-                            fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         ) 
                     },
-                    colors = androidx.compose.material3.SuggestionChipDefaults.suggestionChipColors(
+                    colors = SuggestionChipDefaults.suggestionChipColors(
                         containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
                         labelColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
+                    border = BorderStroke(
                         width = 1.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                     )

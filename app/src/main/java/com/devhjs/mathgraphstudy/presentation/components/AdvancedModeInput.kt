@@ -22,10 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
+import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 
 @Composable
 fun AdvancedModeInput(
@@ -33,51 +35,51 @@ fun AdvancedModeInput(
     onAction: (GraphAction) -> Unit
 ) {
     Column {
-         // Visual AST Panel
-         Box(
-             modifier = Modifier
-                 .fillMaxWidth()
-                 .height(80.dp)
-                 .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
-                 .padding(8.dp),
-             contentAlignment = Alignment.CenterStart
-         ) {
-             Row(
-                 modifier = Modifier
-                     .fillMaxWidth()
-                     .horizontalScroll(rememberScrollState())
-                     .padding(horizontal = 4.dp),
-                 verticalAlignment = Alignment.CenterVertically
-             ) {
-                 com.devhjs.mathgraphstudy.presentation.math.MathNodeView(
-                     node = state.mathInput.rootNode,
-                     currentPath = emptyList(),
-                     focusPath = state.mathInput.focusPath,
-                     onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
-                 )
-             }
-         }
-         
-         Spacer(modifier = Modifier.height(8.dp))
-         
-         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-             Button(
-                 onClick = { onAction(GraphAction.OnAddFunction) },
-                 enabled = state.mathInput.rootNode !is PlaceholderNode
-             ) {
-                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                 Spacer(modifier = Modifier.width(4.dp))
-                 Text("추가")
-             }
-         }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                .padding(8.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MathNodeView(
+                    node = state.mathInput.rootNode,
+                    currentPath = emptyList(),
+                    focusPath = state.mathInput.focusPath,
+                    onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
+                )
+            }
+        }
 
-         Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Button(
+                onClick = { onAction(GraphAction.OnAddFunction) },
+                enabled = state.mathInput.rootNode !is PlaceholderNode
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("추가")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Helper to create a row of buttons
             @Composable
             fun buttonRow(items: List<String>) {
                 Row(
@@ -86,8 +88,8 @@ fun AdvancedModeInput(
                 ) {
                     items.forEach { label ->
                         SuggestionChip(
-                            onClick = { 
-                                val input = when(label) {
+                            onClick = {
+                                val input = when (label) {
                                     "×" -> "*"
                                     "÷" -> "/"
                                     "𝑥" -> "x"
@@ -95,54 +97,60 @@ fun AdvancedModeInput(
                                 }
                                 onAction(GraphAction.OnInput(input))
                             },
-                            label = { 
+                            label = {
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.padding(horizontal = 4.dp)
-                                ) 
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
-            
+
             // Row 1: Functions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                 listOf("sin", "cos", "tan", "log", "ln").forEach { label ->
-                     SuggestionChip(
-                         onClick = { onAction(GraphAction.OnInput(label)) },
-                         label = { Text(label) },
-                         modifier = Modifier.weight(1f)
-                     )
-                 }
+                listOf("sin", "cos", "tan", "log", "ln").forEach { label ->
+                    SuggestionChip(
+                        onClick = { onAction(GraphAction.OnInput(label)) },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             // Row 2
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf("7", "8", "9", "÷", "√").forEach { label ->
                     SuggestionChip(
-                        onClick = { 
+                        onClick = {
                             val input = if (label == "÷") "/" else label
-                             onAction(GraphAction.OnInput(input))
+                            onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
-            
+
             // Row 3
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf("4", "5", "6", "×", "^").forEach { label ->
-                     SuggestionChip(
-                        onClick = { 
+                    SuggestionChip(
+                        onClick = {
                             val input = if (label == "×") "*" else label
-                             onAction(GraphAction.OnInput(input))
+                            onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
                         modifier = Modifier.weight(1f)
@@ -151,12 +159,15 @@ fun AdvancedModeInput(
             }
 
             // Row 4
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("1", "2", "3", "-", "⌫").forEach { label -> 
-                     SuggestionChip(
-                        onClick = { 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("1", "2", "3", "-", "⌫").forEach { label ->
+                    SuggestionChip(
+                        onClick = {
                             val input = if (label == "⌫") "DEL" else label
-                            onAction(GraphAction.OnInput(input)) 
+                            onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
                         modifier = Modifier.weight(1f)
@@ -165,15 +176,18 @@ fun AdvancedModeInput(
             }
 
             // Row 5
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf("0", ".", "x", "+", "→").forEach { label ->
-                     SuggestionChip(
+                    SuggestionChip(
                         onClick = { onAction(GraphAction.OnInput(label)) },
-                        label = { 
+                        label = {
                             Text(
-                                if(label == "x") "𝑥" else label, // Italic x
-                                fontStyle = if(label == "x") androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
-                            ) 
+                                if (label == "x") "𝑥" else label, // Italic x
+                                fontStyle = if (label == "x") FontStyle.Italic else FontStyle.Normal
+                            )
                         },
                         modifier = Modifier.weight(1f)
                     )
