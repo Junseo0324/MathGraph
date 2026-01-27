@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
+import androidx.compose.ui.geometry.Offset
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 
 sealed interface GraphAction {
@@ -12,6 +13,8 @@ sealed interface GraphAction {
     data class OnRemoveFunction(val id: String) : GraphAction
     data class OnToggleVisibility(val id: String) : GraphAction
     data class OnViewportChange(val scale: Float, val offsetX: Float, val offsetY: Float) : GraphAction
+    data class OnSelectIntersection(val point: Offset) : GraphAction // 교점 선택
+    object OnDismissIntersectionInfo : GraphAction // 교점 정보 닫기
     object OnOpenLicenses : GraphAction
     object OnCloseLicenses : GraphAction
 }

@@ -74,7 +74,7 @@ class GraphViewModel @Inject constructor(
             is GraphAction.OnBeginnerTypeChanged -> {
                 _state.update { it.copy(
                     beginnerFunctionType = action.type,
-                    beginnerCoefficients = emptyMap() // Reset coefficients on type change
+                    beginnerCoefficients = emptyMap()
                 ) }
             }
             is GraphAction.OnCoefficientChanged -> {
@@ -96,13 +96,13 @@ class GraphViewModel @Inject constructor(
                     try {
                         val exprNode = mathParser.parseToNode(exprDisplay)
                         parsed = mathParser.evaluate(exprNode)
-                        // Convert domain AST -> Visual AST for nice display
+
                         visualNode = exprNode.toVisualNode()
                     } catch (e: Exception) {
                         return
                     }
                 } else {
-                    // AST Mode
+
                     val root = currentState.mathInput.rootNode
                     try {
                         val exprNode = root.toExpressionNode()
@@ -163,10 +163,17 @@ class GraphViewModel @Inject constructor(
                     state.copy(
                         viewportScale = action.scale,
                         viewportOffsetX = action.offsetX,
-                        viewportOffsetY = action.offsetY
+                        viewportOffsetY = action.offsetY,
+                        selectedIntersection = null // 뷰포트 변경 시 선택 해제
                     )
                 }
                 triggerIntersectionCalculation()
+            }
+            is GraphAction.OnSelectIntersection -> {
+                _state.update { it.copy(selectedIntersection = action.point) }
+            }
+            GraphAction.OnDismissIntersectionInfo -> {
+                _state.update { it.copy(selectedIntersection = null) }
             }
             GraphAction.OnOpenLicenses,
             GraphAction.OnCloseLicenses -> Unit

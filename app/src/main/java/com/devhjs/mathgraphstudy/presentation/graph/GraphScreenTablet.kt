@@ -47,8 +47,15 @@ fun GraphScreenTablet(
                 viewportOffsetX = state.viewportOffsetX,
                 viewportOffsetY = state.viewportOffsetY,
                 intersections = state.intersections,
+                selectedIntersection = state.selectedIntersection,
                 onViewportChange = { scale, offsetX, offsetY ->
                     onAction(GraphAction.OnViewportChange(scale, offsetX, offsetY))
+                },
+                onIntersectionSelected = { point ->
+                    onAction(GraphAction.OnSelectIntersection(point))
+                },
+                onIntersectionDismiss = {
+                    onAction(GraphAction.OnDismissIntersectionInfo)
                 }
             )
 
