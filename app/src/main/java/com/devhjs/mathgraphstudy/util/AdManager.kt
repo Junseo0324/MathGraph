@@ -60,7 +60,6 @@ object AdManager {
              interstitialAd = null
              loadInterstitial(activity)
          } else {
-             Log.d("AdManager", "The interstitial ad wasn't ready yet.")
              loadInterstitial(activity)
          }
      }
