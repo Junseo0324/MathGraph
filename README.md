@@ -1,21 +1,4 @@
 # Math Graph Study
-
-<p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" alt="Math Graph Study Logo" width="120"/>
-</p>
-
-<p align="center">
-  <strong>수학 함수를 시각적으로 탐구하는 Android 그래프 계산기</strong>
-</p>
-
-<p align="center">
-  <a href="#주요-기능">주요 기능</a> •
-  <a href="#스크린샷">스크린샷</a> •
-  <a href="#기술-스택">기술 스택</a> •
-  <a href="#아키텍처">아키텍처</a> •
-  <a href="#시작하기">시작하기</a>
-</p>
-
 ---
 
 ## 📱 소개
@@ -30,7 +13,7 @@
 
 | 메인 화면 | 그래프 뷰 | 함수 입력 |
 |:---:|:---:|:---:|
-| ![메인 화면](screenshots/main.png) | ![그래프 뷰](screenshots/graph.png) | ![함수 입력](screenshots/input.png) |
+| <img width="486" height="934" alt="image" src="https://github.com/user-attachments/assets/b2f3c100-888d-4590-8aba-8c4e6ca40801" /> | <img width="486" height="934" alt="image" src="https://github.com/user-attachments/assets/2efca18b-20bf-4ad0-ab41-e9c911ecea19" />| <img width="486" height="934" alt="image" src="https://github.com/user-attachments/assets/01169e4f-717e-45fd-ae5a-0133245b25ae" /> |
 
 ---
 
@@ -104,20 +87,15 @@ app/
 
 ---
 
+### 다운로드
+
+<a href="https://play.google.com/store/apps/details?id=com.devhjs.mathgraphstudy" target="_blank">
+  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">
+</a>
+
+
 ## 📝 라이선스
 
 이 프로젝트는 오픈소스 라이브러리를 사용합니다. 앱 내 설정에서 오픈소스 라이선스를 확인할 수 있습니다.
 
 ---
-
-## 👤 개발자
-
-**허준서 (DevHJS)**
-
-- GitHub: [@Junseo0324](https://github.com/Junseo0324)
-
----
-
-<p align="center">
-  Made with ❤️ and Jetpack Compose
-</p>
