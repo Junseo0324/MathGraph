@@ -6,13 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable
 fun GraphContentPortrait(
-    state: GraphState,
-    onAction: (GraphAction) -> Unit
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit= {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -49,4 +50,10 @@ fun GraphContentPortrait(
                 .fillMaxWidth()
         )
     }
+}
+
+@Preview()
+@Composable
+private fun GraphContentPortraitPreview() {
+    GraphContentPortrait()
 }

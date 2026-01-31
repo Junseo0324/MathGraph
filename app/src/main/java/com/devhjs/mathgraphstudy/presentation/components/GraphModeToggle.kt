@@ -40,33 +40,28 @@ fun GraphModeToggle(
         val totalWidth = maxWidth
         val tabWidth = totalWidth / 2
 
-        // 움직이는 인디케이터 (슬라이딩 효과)
-        // 초보자 모드(isBeginnerMode=true)일 때 오른쪽(1), 고급 모드(isBeginnerMode=false)일 때 왼쪽(0)
-        // 기존 코드 로직상: 0=고급, 1=초보자
         val indicatorOffset by animateDpAsState(
             targetValue = if (isBeginnerMode) tabWidth else 0.dp,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
                 stiffness = Spring.StiffnessMedium
-            ),
-            label = "indicatorOffset"
+            )
         )
 
-        // 인디케이터
         Box(
             modifier = Modifier
                 .offset(x = indicatorOffset)
                 .width(tabWidth)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(12.dp))
-                .background(AppColors.PrimaryGold)
+                .background(AppColors.TextSecondary)
                 .zIndex(1f) 
         )
 
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .zIndex(2f) // Row 자체를 인디케이터 위로 올림
+                .zIndex(2f)
         ) {
             // 고급 모드 탭
             ToggleTabItem(

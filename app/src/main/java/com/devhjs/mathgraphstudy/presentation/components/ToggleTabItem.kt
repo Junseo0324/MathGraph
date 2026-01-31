@@ -14,15 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 
 @Composable
 fun ToggleTabItem(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
+    text: String = "",
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -51,4 +52,13 @@ fun ToggleTabItem(
             modifier = Modifier.padding(horizontal = 8.dp)
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ToggleTabItemPreview() {
+    ToggleTabItem(
+        text = "고급 모드",
+        isSelected = false,
+    )
 }
