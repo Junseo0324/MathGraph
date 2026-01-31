@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
@@ -17,25 +18,24 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
+import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 
 
 @Composable
 fun FunctionItem(
-    function: GraphFunction,
-    onToggleVisibility: () -> Unit,
-    onDelete: () -> Unit
+    function: GraphFunction = GraphFunction(),
+    onToggleVisibility: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -60,9 +60,9 @@ fun FunctionItem(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                 if (function.visualNode != null) {
-                     Row(verticalAlignment = Alignment.CenterVertically) {
-                         Text(
+                if (function.visualNode != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
                             text = "f(x) =",
                             style = AppTextStyles.smallTextRegular,
                             color = AppColors.TextSecondary,
@@ -74,14 +74,14 @@ fun FunctionItem(
                             focusPath = listOf(-1),
                             onFocusRequest = {}
                         )
-                     }
-                 } else {
+                    }
+                } else {
                     Text(
                         text = "y = ${function.expression}",
                         style = AppTextStyles.normalTextRegular,
                         color = AppColors.TextPrimary
                     )
-                 }
+                }
             }
 
             IconButton(onClick = onToggleVisibility) {
@@ -101,4 +101,10 @@ fun FunctionItem(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun FunctionItemPreview() {
+    FunctionItem()
 }
