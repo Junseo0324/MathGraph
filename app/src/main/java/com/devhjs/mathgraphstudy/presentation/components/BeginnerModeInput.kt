@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
@@ -20,19 +19,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
-import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
-import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
+import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
+import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable
 fun BeginnerModeInput(
-    state: GraphState,
-    onAction: (GraphAction) -> Unit
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit= {}
 ) {
     Column {
         Text("함수 타입 선택", style = AppTextStyles.smallTextBold, color = AppColors.TextPrimary)
@@ -80,4 +79,10 @@ fun BeginnerModeInput(
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
         }
     }
+}
+
+@Preview
+@Composable
+private fun BeginnerModeInputPreview() {
+    BeginnerModeInput()
 }
