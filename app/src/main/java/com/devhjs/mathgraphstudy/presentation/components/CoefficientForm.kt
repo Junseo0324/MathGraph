@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
@@ -19,9 +20,12 @@ import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable
-fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
+fun CoefficientForm(
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit = {}
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("y =", style = AppTextStyles.headerTextBold, color = AppColors.TextPrimary)
+        Text("y =", style = AppTextStyles.largeTextBold, color = AppColors.TextPrimary)
         Spacer(modifier = Modifier.width(8.dp))
 
         when (state.beginnerFunctionType) {
@@ -41,10 +45,6 @@ fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
             }
             BeginnerFunctionType.CUBIC -> {
                 // y = ax^3 + bx^2 + cx + d
-                // Using a Column/Flow logic might be better if it doesn't fit, 
-                // but let's try to be compact or split into two rows implicitly if we could, 
-                // but here we are inside a Row. We'll simplify the text to fit or rely on horizontal scroll if we added it (we didn't).
-                // Let's try to fit.
                 CoefficientInput(state, "a", onAction)
                 Text("x³+", style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
                 CoefficientInput(state, "b", onAction)
@@ -74,3 +74,39 @@ fun CoefficientForm(state: GraphState, onAction: (GraphAction) -> Unit) {
         }
     }
 }
+
+@Preview(name = "Linear")
+@Composable
+private fun CoefficientFormPreview_Linear() {
+    CoefficientForm(
+        state = GraphState(beginnerFunctionType = BeginnerFunctionType.LINEAR)
+    )
+}
+
+@Preview(name = "QUADRATIC")
+@Composable
+private fun CoefficientFormPreview_Quadratic() {
+    CoefficientForm(
+        state = GraphState(beginnerFunctionType = BeginnerFunctionType.QUADRATIC)
+    )
+}
+
+
+@Preview(name = "CUBIC")
+@Composable
+private fun CoefficientFormPreview_Cubic() {
+    CoefficientForm(
+        state = GraphState(beginnerFunctionType = BeginnerFunctionType.CUBIC)
+    )
+}
+
+
+@Preview(name = "RATIONAL")
+@Composable
+private fun CoefficientFormPreview_Rational() {
+    CoefficientForm(
+        state = GraphState(beginnerFunctionType = BeginnerFunctionType.RATIONAL)
+    )
+}
+
+
