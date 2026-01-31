@@ -9,15 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,21 +36,11 @@ fun GraphControls(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                TabRow(
-                    selectedTabIndex = if (state.isBeginnerMode) 1 else 0,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
-                ) {
-                    Tab(
-                        selected = !state.isBeginnerMode,
-                        onClick = { if (state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
-                        text = { Text("고급 모드") }
-                    )
-                    Tab(
-                        selected = state.isBeginnerMode,
-                        onClick = { if (!state.isBeginnerMode) onAction(GraphAction.OnToggleMode) },
-                        text = { Text("초보자 모드") }
-                    )
-                }
+                GraphModeToggle(
+                    isBeginnerMode = state.isBeginnerMode,
+                    onModeChange = { onAction(GraphAction.OnToggleMode) },
+                    modifier = Modifier.fillMaxWidth(0.9f) // 전체 너비의 90% 정도 차지하게
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
