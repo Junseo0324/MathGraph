@@ -19,7 +19,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
-import com.devhjs.mathgraphstudy.presentation.graph.GraphGridCalculator
+import com.devhjs.mathgraphstudy.presentation.math.GraphGridCalculator
 import kotlin.math.abs
 import kotlin.math.sqrt
 
