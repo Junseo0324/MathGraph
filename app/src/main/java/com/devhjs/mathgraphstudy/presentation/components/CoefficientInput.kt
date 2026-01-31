@@ -34,7 +34,7 @@ fun CoefficientInput(
                 textAlign = TextAlign.Center
             )
         },
-        modifier = Modifier
+        modifier = Modifier.padding(4.dp)
             .width(60.dp)
             .padding(horizontal = 4.dp),
         singleLine = true,
