@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
@@ -22,19 +23,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
-import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
-import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
-import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun AdvancedModeInput(
-    state: GraphState,
-    onAction: (GraphAction) -> Unit
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit = {}
 ) {
     Column {
         Box(
@@ -197,4 +198,10 @@ fun AdvancedModeInput(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun AdvancedModelInputPreview() {
+    AdvancedModeInput()
 }
