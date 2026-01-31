@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -17,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
@@ -28,7 +29,7 @@ fun GraphControls(
 ) {
     LazyColumn(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background),
+            .background(AppColors.DarkSurface),
         contentPadding = PaddingValues(16.dp)
     ) {
         item {
@@ -59,8 +60,8 @@ fun GraphControls(
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "함수 목록",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = AppTextStyles.normalTextBold,
+                color = AppColors.TextPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -82,7 +83,7 @@ fun GraphControls(
             ) {
                 Text(
                     text = "오픈소스 라이선스",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = AppColors.TextSecondary,
                     fontSize = 10.sp
                 )
             }

@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,9 @@ import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun AdvancedModeInput(
@@ -39,7 +41,7 @@ fun AdvancedModeInput(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
-                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                .border(1.dp, AppColors.BorderColor, RoundedCornerShape(8.dp))
                 .padding(8.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -100,7 +102,7 @@ fun AdvancedModeInput(
                             label = {
                                 Text(
                                     text = label,
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = AppTextStyles.normalTextRegular,
                                     modifier = Modifier.padding(horizontal = 4.dp)
                                 )
                             },

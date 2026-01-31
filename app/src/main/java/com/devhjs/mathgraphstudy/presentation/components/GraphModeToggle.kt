@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -22,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 
 @Composable
 fun GraphModeToggle(
@@ -34,7 +34,7 @@ fun GraphModeToggle(
         modifier = modifier
             .height(56.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .background(AppColors.SurfaceCard.copy(alpha = 0.5f))
             .padding(4.dp)
     ) {
         val totalWidth = maxWidth
@@ -59,7 +59,7 @@ fun GraphModeToggle(
                 .width(tabWidth)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary)
+                .background(AppColors.PrimaryGold)
                 .zIndex(1f) 
         )
 
@@ -91,13 +91,11 @@ fun GraphModeToggle(
 @Preview
 @Composable
 private fun GraphModeTogglePreview() {
-    MaterialTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            GraphModeToggle(
-                isBeginnerMode = false,
-                onModeChange = {},
-                modifier = Modifier.width(300.dp)
-            )
-        }
+    Box(modifier = Modifier.padding(16.dp)) {
+        GraphModeToggle(
+            isBeginnerMode = false,
+            onModeChange = {},
+            modifier = Modifier.width(300.dp)
+        )
     }
 }

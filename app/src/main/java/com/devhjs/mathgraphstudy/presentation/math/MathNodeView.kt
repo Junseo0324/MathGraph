@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +59,7 @@ fun MathNodeView(
 ) {
     val isFocused = currentPath == focusPath
     val modifier = if (isFocused) {
-        Modifier.border(2.dp, MaterialTheme.colorScheme.primary)
+        Modifier.border(2.dp, AppColors.PrimaryGold)
     } else {
         Modifier
     }
@@ -81,7 +83,7 @@ fun MathNodeView(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(1.dp)
-                                .background(MaterialTheme.colorScheme.onSurface)
+                                .background(AppColors.TextPrimary)
                         )
                         MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
                     }
@@ -103,7 +105,7 @@ fun MathNodeView(
 
             is FunctionNode -> {
                 if (node.func == MathFunction.SQRT) {
-                    val color = MaterialTheme.colorScheme.onSurface
+                    val color = AppColors.TextPrimary
                     Row(
                         modifier = Modifier.drawBehind {
                             val strokeWidth = 1.5.dp.toPx()
@@ -139,7 +141,7 @@ fun MathNodeView(
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
                             ProvideTextStyle(
-                                value = MaterialTheme.typography.labelMedium
+                                value = AppTextStyles.smallTextRegular
                             ) {
                                 MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
                             }
@@ -163,7 +165,7 @@ fun MathNodeView(
                             .offset(y = (-8).dp)
                     ) {
                         ProvideTextStyle(
-                            value = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                            value = AppTextStyles.smallTextRegular.copy(fontSize = 12.sp)
                         ) {
                             MathNodeView(node.exponent, currentPath + 1, focusPath, onFocusRequest)
                         }
@@ -174,7 +176,7 @@ fun MathNodeView(
             PlaceholderNode -> {
                 Box(
                     modifier = Modifier
-                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.extraSmall)
+                        .border(1.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
                         .clickable { onFocusRequest(currentPath) }
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {

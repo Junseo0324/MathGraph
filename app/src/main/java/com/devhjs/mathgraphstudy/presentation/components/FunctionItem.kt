@@ -24,8 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 
 
 @Composable
@@ -39,7 +42,7 @@ fun FunctionItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = AppColors.SurfaceCard
         )
     ) {
         Row(
@@ -51,7 +54,7 @@ fun FunctionItem(
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(Color(function.color), shape = MaterialTheme.shapes.small)
+                    .background(Color(function.color), shape = RoundedCornerShape(8.dp))
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -60,11 +63,11 @@ fun FunctionItem(
                  if (function.visualNode != null) {
                      Row(verticalAlignment = Alignment.CenterVertically) {
                          Text(
-                             text = "f(x) =",
-                             style = MaterialTheme.typography.labelSmall,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                             modifier = Modifier.padding(end = 4.dp)
-                         )
+                            text = "f(x) =",
+                            style = AppTextStyles.smallTextRegular,
+                            color = AppColors.TextSecondary,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
                         MathNodeView(
                             node = function.visualNode,
                             currentPath = emptyList(),
@@ -73,10 +76,11 @@ fun FunctionItem(
                         )
                      }
                  } else {
-                     Text(
+                    Text(
                         text = "y = ${function.expression}",
-                        style = MaterialTheme.typography.bodyLarge
-                     )
+                        style = AppTextStyles.normalTextRegular,
+                        color = AppColors.TextPrimary
+                    )
                  }
             }
 
@@ -84,7 +88,7 @@ fun FunctionItem(
                 Icon(
                     imageVector = if (function.isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                     contentDescription = "Toggle Visibility",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = AppColors.TextSecondary
                 )
             }
 
@@ -92,7 +96,7 @@ fun FunctionItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = AppColors.Red500
                 )
             }
         }

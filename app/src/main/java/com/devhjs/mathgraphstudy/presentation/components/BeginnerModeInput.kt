@@ -20,11 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 
 @Composable
 fun BeginnerModeInput(
@@ -32,7 +35,7 @@ fun BeginnerModeInput(
     onAction: (GraphAction) -> Unit
 ) {
     Column {
-        Text("함수 타입 선택", style = MaterialTheme.typography.labelLarge)
+        Text("함수 타입 선택", style = AppTextStyles.smallTextBold, color = AppColors.TextPrimary)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -48,12 +51,12 @@ fun BeginnerModeInput(
                         ) 
                     },
                     colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-                        labelColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+                        containerColor = if (isSelected) AppColors.PrimaryGoldVariant else Color.Transparent,
+                        labelColor = if (isSelected) AppColors.BlackCharcoal else AppColors.TextPrimary
                     ),
                     border = BorderStroke(
                         width = 1.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        color = if (isSelected) AppColors.PrimaryGold else AppColors.BorderColor
                     )
                 )
             }
@@ -61,7 +64,7 @@ fun BeginnerModeInput(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text("계수 입력", style = MaterialTheme.typography.labelLarge)
+        Text("계수 입력", style = AppTextStyles.smallTextBold, color = AppColors.TextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
 
         CoefficientForm(state, onAction)

@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
@@ -35,9 +36,9 @@ fun OpenSourceLicenseScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = AppColors.SurfaceCard,
+                    titleContentColor = AppColors.TextPrimary,
+                    navigationIconContentColor = AppColors.TextPrimary
                 )
             )
         }

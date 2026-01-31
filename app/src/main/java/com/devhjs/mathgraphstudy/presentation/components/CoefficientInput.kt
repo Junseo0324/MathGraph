@@ -12,6 +12,10 @@ import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
+import androidx.compose.material3.OutlinedTextFieldDefaults
+
 @Composable
 fun CoefficientInput(state: GraphState, key: String, onAction: (GraphAction) -> Unit) {
     OutlinedTextField(
@@ -22,6 +26,14 @@ fun CoefficientInput(state: GraphState, key: String, onAction: (GraphAction) -> 
             .width(60.dp)
             .padding(horizontal = 4.dp),
         singleLine = true,
+        textStyle = AppTextStyles.normalTextRegular.copy(color = AppColors.TextPrimary),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = AppColors.PrimaryGold,
+            unfocusedBorderColor = AppColors.BorderColor,
+            focusedLabelColor = AppColors.PrimaryGold,
+            unfocusedLabelColor = AppColors.TextSecondary,
+            cursorColor = AppColors.PrimaryGold
+        ),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number
         )

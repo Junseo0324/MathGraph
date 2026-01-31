@@ -14,8 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +39,7 @@ fun GraphScreenTablet(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = AppColors.BlackCharcoal
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             GraphCanvas(
@@ -72,14 +73,14 @@ fun GraphScreenTablet(
                         .height(64.dp)
                         .shadow(4.dp, shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
                     shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = AppColors.PrimaryGold,
                     tonalElevation = 4.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (isPanelVisible.value) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = if (isPanelVisible.value) "Close Panel" else "Open Panel",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = AppColors.BlackCharcoal
                         )
                     }
                 }
@@ -94,7 +95,7 @@ fun GraphScreenTablet(
                             .fillMaxHeight()
                             .width(360.dp)
                             .shadow(8.dp),
-                        color = MaterialTheme.colorScheme.surface,
+                        color = AppColors.SurfaceCard,
                         tonalElevation = 2.dp
                     ) {
                         GraphControls(
