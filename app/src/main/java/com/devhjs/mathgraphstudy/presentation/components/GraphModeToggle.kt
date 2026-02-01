@@ -32,7 +32,7 @@ fun GraphModeToggle(
     // 배경 컨테이너
     BoxWithConstraints(
         modifier = modifier
-            .height(56.dp)
+            .height(40.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(AppColors.SurfaceCard.copy(alpha = 0.5f))
             .padding(4.dp)
@@ -55,7 +55,7 @@ fun GraphModeToggle(
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(12.dp))
                 .background(AppColors.TextSecondary)
-                .zIndex(1f) 
+                .zIndex(1f)
         )
 
         Row(
@@ -83,7 +83,7 @@ fun GraphModeToggle(
 
 
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun GraphModeTogglePreview() {
     Box(modifier = Modifier.padding(16.dp)) {

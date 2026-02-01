@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,16 +19,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
-import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
@@ -83,35 +85,7 @@ fun AdvancedModeInput(
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            @Composable
-            fun buttonRow(items: List<String>) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items.forEach { label ->
-                        SuggestionChip(
-                            onClick = {
-                                val input = when (label) {
-                                    "×" -> "*"
-                                    "÷" -> "/"
-                                    "𝑥" -> "x"
-                                    else -> label
-                                }
-                                onAction(GraphAction.OnInput(input))
-                            },
-                            label = {
-                                Text(
-                                    text = label,
-                                    style = AppTextStyles.normalTextRegular,
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+
 
             // Row 1: Functions
             Row(
@@ -122,7 +96,11 @@ fun AdvancedModeInput(
                     SuggestionChip(
                         onClick = { onAction(GraphAction.OnInput(label)) },
                         label = { Text(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            labelColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
                     )
                 }
             }
@@ -139,7 +117,11 @@ fun AdvancedModeInput(
                             onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            labelColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
                     )
                 }
             }
@@ -156,7 +138,11 @@ fun AdvancedModeInput(
                             onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            labelColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
                     )
                 }
             }
@@ -173,7 +159,11 @@ fun AdvancedModeInput(
                             onAction(GraphAction.OnInput(input))
                         },
                         label = { Text(label) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            labelColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
                     )
                 }
             }
@@ -192,7 +182,11 @@ fun AdvancedModeInput(
                                 fontStyle = if (label == "x") FontStyle.Italic else FontStyle.Normal
                             )
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            labelColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
                     )
                 }
             }
