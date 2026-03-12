@@ -1,6 +1,7 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -36,15 +37,21 @@ import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 
 @Composable
-fun AdvancedModeInput(
+fun AdvancedModeEquationBox(
     state: GraphState = GraphState(),
     onAction: (GraphAction) -> Unit = {}
 ) {
-    Column {
+    Box( // Added background to make it solid when sticky
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AppColors.DarkSurface)
+            .padding(vertical = 4.dp)
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
+                .background(AppColors.DarkSurface)
                 .border(1.dp, AppColors.BorderColor, RoundedCornerShape(8.dp))
                 .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
                 .padding(8.dp),
@@ -65,9 +72,15 @@ fun AdvancedModeInput(
                 )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(8.dp))
-
+@Composable
+fun AdvancedModeKeypad(
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit = {}
+) {
+    Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Button(
                 onClick = { onAction(GraphAction.OnAddFunction) },
@@ -87,7 +100,6 @@ fun AdvancedModeInput(
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
 
             // Row 1: Functions
             Row(
@@ -193,6 +205,18 @@ fun AdvancedModeInput(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AdvancedModeInput(
+    state: GraphState = GraphState(),
+    onAction: (GraphAction) -> Unit = {}
+) {
+    Column {
+        AdvancedModeEquationBox(state, onAction)
+        Spacer(modifier = Modifier.height(8.dp))
+        AdvancedModeKeypad(state, onAction)
     }
 }
 

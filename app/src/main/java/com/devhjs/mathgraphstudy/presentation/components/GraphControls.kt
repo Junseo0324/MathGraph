@@ -21,6 +21,7 @@ import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun GraphControls(
     modifier: Modifier = Modifier,
@@ -51,8 +52,11 @@ fun GraphControls(
                 BeginnerModeInput(state, onAction)
             }
         } else {
+            stickyHeader {
+                AdvancedModeEquationBox(state, onAction)
+            }
             item {
-                AdvancedModeInput(state, onAction)
+                AdvancedModeKeypad(state, onAction)
             }
         }
 
