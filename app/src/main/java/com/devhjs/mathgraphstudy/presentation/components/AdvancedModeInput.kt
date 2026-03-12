@@ -2,6 +2,7 @@ package com.devhjs.mathgraphstudy.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ fun AdvancedModeInput(
                 .fillMaxWidth()
                 .height(80.dp)
                 .border(1.dp, AppColors.BorderColor, RoundedCornerShape(8.dp))
+                .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
                 .padding(8.dp),
             contentAlignment = Alignment.CenterStart
         ) {
