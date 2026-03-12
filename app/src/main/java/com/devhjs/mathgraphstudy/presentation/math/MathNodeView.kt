@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
-import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +36,8 @@ import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 
 /**
  * [VisualMathNode] 트리를 재귀적으로 순회하며 화면에 그리는 Jetpack Compose 컴포넌트입니다.
@@ -58,10 +58,13 @@ fun MathNodeView(
     onFocusRequest: (List<Int>) -> Unit
 ) {
     val isFocused = currentPath == focusPath
+    // 터치 시 해당 노드로 포커스 이동을 위한 modifier
+    val baseModifier = Modifier.clickable { onFocusRequest(currentPath) }
+    
     val modifier = if (isFocused) {
-        Modifier.border(2.dp, AppColors.PrimaryGold)
+        baseModifier.border(2.dp, AppColors.PrimaryGold)
     } else {
-        Modifier
+        baseModifier
     }
 
     Box(modifier = modifier.padding(2.dp)) {
@@ -177,7 +180,8 @@ fun MathNodeView(
                 Box(
                     modifier = Modifier
                         .border(1.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
-                        .clickable { onFocusRequest(currentPath) }
+                        // PlaceholderNode is already wrapped by the baseModifier in the outer Box,
+                        // but we keep its padding. No need for an additional clickable here.
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(" ") // Empty space to give size
