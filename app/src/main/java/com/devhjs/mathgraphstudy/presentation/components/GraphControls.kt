@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +22,7 @@ import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GraphControls(
     modifier: Modifier = Modifier,

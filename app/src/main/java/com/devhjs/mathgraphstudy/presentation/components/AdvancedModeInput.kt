@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
@@ -47,28 +48,46 @@ fun AdvancedModeEquationBox(
             .background(AppColors.DarkSurface)
             .padding(vertical = 4.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .background(AppColors.DarkSurface)
-                .border(1.dp, AppColors.BorderColor, RoundedCornerShape(8.dp))
-                .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
-                .padding(8.dp),
-            contentAlignment = Alignment.CenterStart
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
+                    .height(80.dp)
+                    .background(AppColors.DarkSurface)
+                    .border(1.dp, AppColors.BorderColor, RoundedCornerShape(8.dp))
+                    .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
+                    .padding(8.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                MathNodeView(
-                    node = state.mathInput.rootNode,
-                    currentPath = emptyList(),
-                    focusPath = state.mathInput.focusPath,
-                    onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    MathNodeView(
+                        node = state.mathInput.rootNode,
+                        currentPath = emptyList(),
+                        focusPath = state.mathInput.focusPath,
+                        onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            IconButton(
+                onClick = { onAction(GraphAction.OnAddFunction) },
+                enabled = state.mathInput.rootNode !is PlaceholderNode
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add",
+                    tint = AppColors.PrimaryGold
                 )
             }
         }
@@ -81,19 +100,6 @@ fun AdvancedModeKeypad(
     onAction: (GraphAction) -> Unit = {}
 ) {
     Column {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Button(
-                onClick = { onAction(GraphAction.OnAddFunction) },
-                enabled = state.mathInput.rootNode !is PlaceholderNode
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("추가")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()

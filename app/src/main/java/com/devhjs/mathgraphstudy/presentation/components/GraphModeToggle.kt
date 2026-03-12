@@ -63,9 +63,8 @@ fun GraphModeToggle(
                 .fillMaxSize()
                 .zIndex(2f)
         ) {
-            // 고급 모드 탭
             ToggleTabItem(
-                text = "고급 모드",
+                text = "일반 모드",
                 isSelected = !isBeginnerMode,
                 modifier = Modifier.width(tabWidth),
                 onClick = { if (isBeginnerMode) onModeChange() }
