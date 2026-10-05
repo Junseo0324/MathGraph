@@ -38,7 +38,7 @@ fun ToggleTabItem(
         contentAlignment = Alignment.Center
     ) {
         val textColor = if (isSelected) {
-            AppColors.Background
+            AppColors.TextPrimary
         } else {
             AppColors.TextSecondary
         }

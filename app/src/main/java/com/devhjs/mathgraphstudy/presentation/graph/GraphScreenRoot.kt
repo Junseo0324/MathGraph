@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.devhjs.mathgraphstudy.presentation.license.OpenSourceLicenseScreen
+import com.devhjs.mathgraphstudy.presentation.util.InAppReviewLauncher
 import com.devhjs.mathgraphstudy.util.AdManager
 
 @Composable
@@ -36,6 +37,11 @@ fun GraphScreenRoot(
                 GraphEvent.ShowInterstitialAd -> {
                     if (context is Activity) {
                         AdManager.showInterstitial(context)
+                    }
+                }
+                GraphEvent.RequestReview -> {
+                    if (context is Activity) {
+                        InAppReviewLauncher.launch(context)
                     }
                 }
             }

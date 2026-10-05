@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 import com.devhjs.mathgraphstudy.presentation.graph.GraphViewportState
+import com.devhjs.mathgraphstudy.presentation.graph.PREVIEW_FUNCTION_ID
 
 /**
  * 화면 상태([GraphState])를 [GraphCanvas]에 연결하는 그래프 영역입니다.
@@ -22,7 +23,7 @@ fun GraphArea(
     GraphCanvas(
         modifier = modifier,
         viewport = viewport,
-        functions = state.functions,
+        functions = state.displayedFunctions,
         parameterValues = state.parameterValues,
         intersections = state.intersections,
         selectedFunctionId = state.selectedFunctionId,
@@ -30,7 +31,8 @@ fun GraphArea(
         selectedPoint = state.selectedPoint,
         controlsAlignment = controlsAlignment,
         onVisibleRangeChange = { startX, endX -> onAction(GraphAction.OnVisibleRangeChange(startX, endX)) },
-        onFunctionSelected = { id -> onAction(GraphAction.OnSelectFunction(id)) },
+        // 미리보기 곡선은 저장된 함수가 아니므로 선택 대상에서 제외
+        onFunctionSelected = { id -> onAction(GraphAction.OnSelectFunction(id?.takeIf { it != PREVIEW_FUNCTION_ID })) },
         onPointSelected = { point -> onAction(GraphAction.OnSelectPoint(point)) },
         onPointDismiss = { onAction(GraphAction.OnDismissPointInfo) }
     )

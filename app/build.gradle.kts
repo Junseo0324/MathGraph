@@ -81,6 +81,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.play.review.ktx)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

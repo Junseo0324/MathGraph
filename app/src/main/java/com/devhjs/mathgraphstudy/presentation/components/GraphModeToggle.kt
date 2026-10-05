@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -33,9 +34,9 @@ fun GraphModeToggle(
     BoxWithConstraints(
         modifier = modifier
             .height(40.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppColors.SurfaceCard.copy(alpha = 0.5f))
-            .padding(4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(AppColors.KeyFunction)
+            .padding(3.dp)
     ) {
         val totalWidth = maxWidth
         val tabWidth = totalWidth / 2
@@ -53,8 +54,9 @@ fun GraphModeToggle(
                 .offset(x = indicatorOffset)
                 .width(tabWidth)
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(12.dp))
-                .background(AppColors.TextSecondary)
+                .shadow(2.dp, RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(9.dp))
+                .background(AppColors.KeyNumber)
                 .zIndex(1f)
         )
 

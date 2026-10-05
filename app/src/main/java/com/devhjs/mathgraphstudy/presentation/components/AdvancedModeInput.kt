@@ -28,12 +28,12 @@ import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
-import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
-import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
+import com.devhjs.mathgraphstudy.presentation.math.ExpressionEditor
+import com.devhjs.mathgraphstudy.presentation.math.ExpressionEditorView
 
 /**
  * 직접 입력 모드에서 작성 중인 수식을 보여주는 입력창입니다.
- * 빈 영역을 누르면 수식 전체로 포커스가 이동합니다.
+ * 수식을 탭하면 그 위치로 커서가 이동하고, 빈 영역을 탭하면 맨 끝으로 이동합니다.
  */
 @Composable
 fun AdvancedModeEquationBox(
@@ -46,25 +46,17 @@ fun AdvancedModeEquationBox(
             .height(64.dp)
             .background(AppColors.Background, RoundedCornerShape(12.dp))
             .border(1.dp, AppColors.PrimaryGold.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-            .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
+            .clickable { onAction(GraphAction.OnCursorChange(state.editor.tokens.size)) }
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("y =", style = AppTextStyles.normalTextRegular, color = AppColors.TextSecondary)
-        Spacer(modifier = Modifier.width(8.dp))
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            MathNodeView(
-                node = state.mathInput.rootNode,
-                currentPath = emptyList(),
-                focusPath = state.mathInput.focusPath,
-                onFocusRequest = { onAction(GraphAction.OnFocusChange(it)) }
-            )
-        }
+        Spacer(modifier = Modifier.width(4.dp))
+        ExpressionEditorView(
+            state = state.editor,
+            onCursorChange = { onAction(GraphAction.OnCursorChange(it)) },
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -91,7 +83,7 @@ private val keypadRows = listOf(
         KeypadKey("÷", KeyType.OPERATOR, "/")
     ),
     listOf(
-        KeypadKey("( )", KeyType.OPERATOR, MathInputManager.INPUT_PAREN),
+        KeypadKey("( )", KeyType.OPERATOR, ExpressionEditor.INPUT_PAREN),
         KeypadKey("√", KeyType.FUNCTION),
         KeypadKey("4", KeyType.NUMBER),
         KeypadKey("5", KeyType.NUMBER),
@@ -107,11 +99,11 @@ private val keypadRows = listOf(
         KeypadKey("−", KeyType.OPERATOR, "-")
     ),
     listOf(
-        KeypadKey("←", KeyType.ACTION, MathInputManager.INPUT_LEFT),
-        KeypadKey("→", KeyType.ACTION, MathInputManager.INPUT_RIGHT),
+        KeypadKey("←", KeyType.ACTION, ExpressionEditor.INPUT_LEFT),
+        KeypadKey("→", KeyType.ACTION, ExpressionEditor.INPUT_RIGHT),
         KeypadKey("0", KeyType.NUMBER),
         KeypadKey(".", KeyType.NUMBER),
-        KeypadKey("⌫", KeyType.ACTION, MathInputManager.INPUT_DELETE),
+        KeypadKey("⌫", KeyType.ACTION, ExpressionEditor.INPUT_DELETE),
         KeypadKey("+", KeyType.OPERATOR)
     )
 )

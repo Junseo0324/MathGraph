@@ -23,6 +23,12 @@ object AppTextStyles {
         fontSize = 20.sp,
         lineHeight = 30.sp
     )
+    val largeTextRegular = TextStyle(
+        fontFamily = AppFonts.Pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 19.sp,
+        lineHeight = 28.sp
+    )
     val normalTextBold = TextStyle(
         fontFamily = AppFonts.Pretendard,
         fontWeight = FontWeight.Bold,
@@ -40,6 +46,12 @@ object AppTextStyles {
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp
+    )
+    val captionRegular = TextStyle(
+        fontFamily = AppFonts.Pretendard,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 14.sp
     )
     val smallTextRegular = TextStyle(
         fontFamily = AppFonts.Pretendard,

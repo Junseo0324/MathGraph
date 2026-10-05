@@ -4,7 +4,7 @@ import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 
 sealed interface GraphAction {
     data class OnInput(val input: String) : GraphAction
-    data class OnFocusChange(val path: List<Int>) : GraphAction
+    data class OnCursorChange(val index: Int) : GraphAction // 수식을 탭해 커서 이동
     object OnToggleMode : GraphAction
     data class OnOpenEditor(val functionId: String?) : GraphAction // null 이면 새 함수 추가
     object OnCloseEditor : GraphAction

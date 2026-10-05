@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
@@ -57,22 +58,35 @@ fun MathNodeView(
     node: VisualMathNode,
     currentPath: List<Int>,
     focusPath: List<Int>,
-    onFocusRequest: (List<Int>) -> Unit
+    onFocusRequest: (List<Int>) -> Unit,
+    editable: Boolean = true
 ) {
-    val isFocused = currentPath == focusPath
-    // 터치 시 해당 노드로 포커스 이동을 위한 modifier
-    val baseModifier = Modifier.clickable { onFocusRequest(currentPath) }
-    
-    val modifier = if (isFocused) {
-        baseModifier.border(2.dp, AppColors.PrimaryGold)
-    } else {
-        baseModifier
+    val isFocused = editable && currentPath == focusPath
+    // 편집 중일 때만 각 노드를 터치해 포커스를 옮길 수 있음 (목록 표시용은 터치/여백 없음)
+    val modifier = when {
+        !editable -> Modifier
+        isFocused -> Modifier
+            .clickable { onFocusRequest(currentPath) }
+            .border(2.dp, AppColors.PrimaryGold, RoundedCornerShape(4.dp))
+            .padding(2.dp)
+        else -> Modifier
+            .clickable { onFocusRequest(currentPath) }
+            .padding(2.dp)
     }
 
-    Box(modifier = modifier.padding(2.dp)) {
+    // 자식 노드에도 같은 편집 여부를 전달
+    @Composable
+    fun Child(child: VisualMathNode, index: Int) =
+        MathNodeView(child, currentPath + index, focusPath, onFocusRequest, editable)
+
+    Box(modifier = modifier) {
         when (node) {
             is NumberNode -> Text(text = node.value)
-            is VariableNode -> Text(text = node.name)
+            is VariableNode -> Text(
+                // 수학 표기 관례: 문자는 기울임, 원주율은 π
+                text = if (node.name == "pi") "π" else node.name,
+                fontStyle = if (node.name == "pi") FontStyle.Normal else FontStyle.Italic
+            )
             is BinaryOpNode -> {
                 if (node.op == MathOperator.DIVIDE) {
                     // Vertical Fraction Layout
@@ -82,7 +96,7 @@ fun MathNodeView(
                             .padding(horizontal = 2.dp)
                             .width(IntrinsicSize.Max)
                     ) {
-                        MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
+                        Child(node.left, 0)
                         // Fraction Bar
                         Box(
                             modifier = Modifier
@@ -90,14 +104,14 @@ fun MathNodeView(
                                 .height(1.dp)
                                 .background(AppColors.TextPrimary)
                         )
-                        MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
+                        Child(node.right, 1)
                     }
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
+                        Child(node.left, 0)
                         if (node.op == MathOperator.MULTIPLY && !node.right.startsWithDigit()) {
-                            // 암시적 곱셈 (예: 2x, 3sin x) 은 기호 생략
-                            Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                            // 암시적 곱셈 (예: 2x, 3sin x) 은 기호 생략. 함수 이름 앞은 조금 더 띄움 (a sin x)
+                            Spacer(modifier = Modifier.width(if (node.right is FunctionNode) 5.dp else 2.dp))
                         } else {
                             val symbol = when (node.op) {
                                 MathOperator.MULTIPLY -> "×"
@@ -105,11 +119,11 @@ fun MathNodeView(
                                 else -> node.op.symbol
                             }
                             Text(
-                                text = " $symbol ",
-                                modifier = Modifier.padding(horizontal = 4.dp)
+                                text = symbol,
+                                modifier = Modifier.padding(horizontal = 6.dp)
                             )
                         }
-                        MathNodeView(node.right, currentPath + 1, focusPath, onFocusRequest)
+                        Child(node.right, 1)
                     }
                 }
             }
@@ -154,14 +168,14 @@ fun MathNodeView(
                             ProvideTextStyle(
                                 value = AppTextStyles.smallTextRegular
                             ) {
-                                MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                                Child(node.arg, 0)
                             }
                         }
                     }
                 } else if (node.func == MathFunction.ABS) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "|")
-                        MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                        Child(node.arg, 0)
                         Text(text = "|")
                     }
                 } else {
@@ -171,7 +185,7 @@ fun MathNodeView(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = node.func.symbol)
                         if (needsParens) Text(text = "(") else Spacer(modifier = Modifier.padding(horizontal = 2.dp))
-                        MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                        Child(node.arg, 0)
                         if (needsParens) Text(text = ")")
                     }
                 }
@@ -179,7 +193,7 @@ fun MathNodeView(
 
             is PowerNode -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MathNodeView(node.base, currentPath + 0, focusPath, onFocusRequest)
+                    Child(node.base, 0)
                     Box(
                         modifier = Modifier
                             .padding(start = 2.dp)
@@ -188,7 +202,7 @@ fun MathNodeView(
                         ProvideTextStyle(
                             value = AppTextStyles.smallTextRegular.copy(fontSize = 12.sp)
                         ) {
-                            MathNodeView(node.exponent, currentPath + 1, focusPath, onFocusRequest)
+                            Child(node.exponent, 1)
                         }
                     }
                 }
@@ -197,7 +211,7 @@ fun MathNodeView(
             is ParenNode -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "(")
-                    MathNodeView(node.inner, currentPath + 0, focusPath, onFocusRequest)
+                    Child(node.inner, 0)
                     Text(text = ")")
                 }
             }
@@ -205,7 +219,7 @@ fun MathNodeView(
             is NegateNode -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "−")
-                    MathNodeView(node.operand, currentPath + 0, focusPath, onFocusRequest)
+                    Child(node.operand, 0)
                 }
             }
 

@@ -4,12 +4,9 @@ import com.devhjs.mathgraphstudy.domain.error.ExpressionError
 import com.devhjs.mathgraphstudy.domain.model.FunctionInput
 import com.devhjs.mathgraphstudy.domain.model.Result
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
-import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
 import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
-import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
-import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.toExpressionNode
 import com.devhjs.mathgraphstudy.domain.service.MathParser
@@ -22,26 +19,20 @@ class BuildFunctionNodeUseCaseTest {
     private val buildFunctionNode = BuildFunctionNodeUseCase(MathParser())
 
     @Test
-    fun testCompleteExpressionSucceeds() {
-        // Given: 2 + x
-        val node = BinaryOpNode(NumberNode("2"), MathOperator.PLUS, VariableNode("x"))
+    fun testExpressionTextBuildsNode() {
+        // When: "2 + x"
+        val result = buildFunctionNode(FunctionInput.Expression("2 + x"))
 
-        // When
-        val result = buildFunctionNode(FunctionInput.Expression(node))
-
-        // Then: 입력한 트리를 그대로 반환
-        assertEquals(Result.Success(node), result)
+        // Then: 2 + x 트리
+        assertEquals(Result.Success(BinaryOpNode(NumberNode("2"), MathOperator.PLUS, VariableNode("x"))), result)
     }
 
     @Test
     fun testEmptyOrIncompleteExpressionFails() {
-        // Given: 빈 수식, sin(?) 처럼 빈 칸이 남은 수식
-        val empty = FunctionInput.Expression(PlaceholderNode)
-        val incomplete = FunctionInput.Expression(FunctionNode(MathFunction.SIN, PlaceholderNode))
-
-        // When & Then
-        assertEquals(Result.Error(ExpressionError.EMPTY_SLOT), buildFunctionNode(empty))
-        assertEquals(Result.Error(ExpressionError.EMPTY_SLOT), buildFunctionNode(incomplete))
+        // Given & When & Then: 빈 수식, 연산자 뒤가 빈 수식, 빈 함수 괄호
+        assertEquals(Result.Error(ExpressionError.EMPTY), buildFunctionNode(FunctionInput.Expression("  ")))
+        assertEquals(Result.Error(ExpressionError.INVALID_EXPRESSION), buildFunctionNode(FunctionInput.Expression("2 +")))
+        assertEquals(Result.Error(ExpressionError.INVALID_EXPRESSION), buildFunctionNode(FunctionInput.Expression("sin( )")))
     }
 
     @Test

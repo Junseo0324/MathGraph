@@ -16,10 +16,11 @@ import com.devhjs.mathgraphstudy.domain.usecase.DeleteGraphFunctionUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.FindKeyPointsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveGraphFunctionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveParametersUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.RecordFunctionAddedUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveGraphFunctionUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveParameterUseCase
-import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
-import com.devhjs.mathgraphstudy.presentation.math.MathInputState
+import com.devhjs.mathgraphstudy.presentation.math.EditorState
+import com.devhjs.mathgraphstudy.presentation.math.ExpressionEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -45,6 +46,7 @@ class GraphViewModel @Inject constructor(
     private val findKeyPointsUseCase: FindKeyPointsUseCase,
     private val observeParametersUseCase: ObserveParametersUseCase,
     private val saveParameterUseCase: SaveParameterUseCase,
+    private val recordFunctionAddedUseCase: RecordFunctionAddedUseCase,
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher
 ) : ViewModel() {
     private val _state = MutableStateFlow(GraphState())
@@ -55,7 +57,6 @@ class GraphViewModel @Inject constructor(
 
     private var analysisJob: Job? = null
     private var animationJob: Job? = null
-    private var functionAddedCount = 0
 
     // 저장된 모든 매개변수 (화면에는 함수에 쓰인 것만 표시)
     private var allParameters: List<Parameter> = emptyList()
@@ -72,19 +73,15 @@ class GraphViewModel @Inject constructor(
     fun onAction(action: GraphAction) {
         when (action) {
             is GraphAction.OnInput -> {
-                 _state.update {
-                     val newInputState = MathInputManager.processInput(it.mathInput, action.input)
-                     it.copy(mathInput = newInputState)
-                 }
+                _state.update { it.copy(editor = ExpressionEditor.input(it.editor, action.input)) }
+                updatePreview()
             }
-            is GraphAction.OnFocusChange -> {
-                _state.update {
-                    val newInputState = MathInputManager.onFocusChange(it.mathInput, action.path)
-                    it.copy(mathInput = newInputState)
-                }
+            is GraphAction.OnCursorChange -> {
+                _state.update { it.copy(editor = ExpressionEditor.moveCursor(it.editor, action.index)) }
             }
             GraphAction.OnToggleMode -> {
                 _state.update { it.copy(isTemplateMode = !it.isTemplateMode) }
+                updatePreview()
             }
             is GraphAction.OnOpenEditor -> {
                 val target = action.functionId?.let { id -> _state.value.functions.find { it.id == id } }
@@ -94,26 +91,23 @@ class GraphViewModel @Inject constructor(
                         editingFunctionId = target?.id,
                         // 기존 함수는 직접 입력 모드에서 수식을 그대로 불러와 편집
                         isTemplateMode = if (target != null) false else it.isTemplateMode,
-                        mathInput = if (target != null) {
-                            MathInputState(
-                                rootNode = target.node,
-                                focusPath = MathInputManager.endOfExpressionPath(target.node)
-                            )
-                        } else {
-                            MathInputState()
-                        },
+                        editor = target?.let { ExpressionEditor.fromNode(it.node) } ?: EditorState(),
                         beginnerCoefficients = emptyMap()
                     )
                 }
+                updatePreview()
             }
             GraphAction.OnCloseEditor -> {
-                _state.update { it.copy(isEditorOpen = false, editingFunctionId = null, mathInput = MathInputState()) }
+                _state.update {
+                    it.copy(isEditorOpen = false, editingFunctionId = null, editor = EditorState(), previewNode = null)
+                }
             }
             is GraphAction.OnBeginnerTypeChanged -> {
                 _state.update { it.copy(
                     beginnerFunctionType = action.type,
                     beginnerCoefficients = emptyMap()
                 ) }
+                updatePreview()
             }
             is GraphAction.OnCoefficientChanged -> {
                 _state.update {
@@ -121,6 +115,7 @@ class GraphViewModel @Inject constructor(
                     newCoefficients[action.key] = action.value
                     it.copy(beginnerCoefficients = newCoefficients)
                 }
+                updatePreview()
             }
             GraphAction.OnSubmitFunction -> submitFunction()
             is GraphAction.OnRemoveFunction -> {
@@ -290,19 +285,31 @@ class GraphViewModel @Inject constructor(
         if (save) saveParameter(name)
     }
 
+    /** 현재 입력 패널의 내용 (직접 입력 수식 또는 템플릿 계수) */
+    private fun currentInput(state: GraphState): FunctionInput =
+        if (state.isTemplateMode) {
+            FunctionInput.Template(state.beginnerFunctionType, state.beginnerCoefficients)
+        } else {
+            FunctionInput.Expression(ExpressionEditor.toParserText(state.editor.tokens))
+        }
+
+    /**
+     * 입력 중인 수식을 해석해 그래프에 미리 그립니다.
+     * 아직 완성되지 않은 수식이면 미리보기를 지웁니다. (오류 메시지는 추가할 때만 표시)
+     */
+    private fun updatePreview() {
+        val state = _state.value
+        val preview = (buildFunctionNodeUseCase(currentInput(state)) as? Result.Success)?.data
+        _state.update { it.copy(previewNode = preview) }
+    }
+
     /**
      * 입력한 수식으로 새 함수를 추가하거나, 편집 중인 함수의 수식을 교체합니다.
      * 수식이 올바르지 않으면 입력 패널을 연 채로 오류를 알립니다.
      */
     private fun submitFunction() {
         val currentState = _state.value
-        val input = if (currentState.isTemplateMode) {
-            FunctionInput.Template(currentState.beginnerFunctionType, currentState.beginnerCoefficients)
-        } else {
-            FunctionInput.Expression(currentState.mathInput.rootNode)
-        }
-
-        val node = when (val result = buildFunctionNodeUseCase(input)) {
+        val node = when (val result = buildFunctionNodeUseCase(currentInput(currentState))) {
             is Result.Success -> result.data
             is Result.Error -> {
                 sendError(result.error.toMessage())
@@ -324,18 +331,26 @@ class GraphViewModel @Inject constructor(
             state.copy(
                 isEditorOpen = false,
                 editingFunctionId = null,
-                mathInput = MathInputState(),
-                beginnerCoefficients = emptyMap()
+                editor = EditorState(),
+                beginnerCoefficients = emptyMap(),
+                previewNode = null
             )
         }
         saveFunction(function)
 
-        if (editingFunction == null) {
-            functionAddedCount++
-            if (functionAddedCount % 5 == 0) {
-                viewModelScope.launch {
-                    _events.send(GraphEvent.ShowInterstitialAd)
+        if (editingFunction == null) onFunctionAdded()
+    }
+
+    /** 새 함수를 추가할 때마다 기록하고, 정책에 따라 광고 또는 리뷰 요청을 띄웁니다. */
+    private fun onFunctionAdded() {
+        viewModelScope.launch {
+            when (val result = recordFunctionAddedUseCase(System.currentTimeMillis())) {
+                is Result.Success -> {
+                    if (result.data.requestReview) _events.send(GraphEvent.RequestReview)
+                    if (result.data.showInterstitial) _events.send(GraphEvent.ShowInterstitialAd)
                 }
+                // 기록 실패는 사용자에게 알릴 필요 없음 (광고/리뷰를 건너뜀)
+                is Result.Error -> Unit
             }
         }
     }

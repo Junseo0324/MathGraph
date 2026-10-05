@@ -16,7 +16,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import com.devhjs.mathgraphstudy.presentation.components.GraphArea
 import com.devhjs.mathgraphstudy.presentation.components.GraphContentPortrait
 
 @Composable
@@ -50,11 +49,8 @@ fun GraphScreen(
     }
 
     if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        GraphArea(
-            state = state,
-            viewport = viewport,
-            onAction = onAction
-        )
+        // 가로 모드: 태블릿과 같은 좌우 배치 (그래프 + 접을 수 있는 측면 패널)
+        GraphScreenTablet(viewport = viewport, state = state, onAction = onAction)
     } else {
         GraphContentPortrait(viewport = viewport, state = state, onAction = onAction)
     }

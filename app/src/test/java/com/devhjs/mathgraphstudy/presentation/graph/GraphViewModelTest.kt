@@ -2,7 +2,6 @@ package com.devhjs.mathgraphstudy.presentation.graph
 
 import com.devhjs.mathgraphstudy.domain.error.DataError
 import com.devhjs.mathgraphstudy.domain.model.KeyPoint
-import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.BuildFunctionNodeUseCase
@@ -10,12 +9,14 @@ import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.DeleteGraphFunctionUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.FindKeyPointsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveParametersUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.RecordFunctionAddedUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveParameterUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveGraphFunctionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveGraphFunctionUseCase
 import com.devhjs.mathgraphstudy.fake.FakeGraphFunctionRepository
 import com.devhjs.mathgraphstudy.fake.FakeParameterRepository
-import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
+import com.devhjs.mathgraphstudy.fake.FakeUsageRepository
+import com.devhjs.mathgraphstudy.presentation.math.ExpressionEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -57,6 +58,7 @@ class GraphViewModelTest {
         findKeyPointsUseCase = FindKeyPointsUseCase(),
         observeParametersUseCase = ObserveParametersUseCase(parameterRepository),
         saveParameterUseCase = SaveParameterUseCase(parameterRepository),
+        recordFunctionAddedUseCase = RecordFunctionAddedUseCase(FakeUsageRepository()),
         defaultDispatcher = testDispatcher
     )
 
@@ -98,7 +100,9 @@ class GraphViewModelTest {
         val editing = viewModel.state.value
         assertTrue(editing.isEditorOpen)
         assertEquals(original.id, editing.editingFunctionId)
-        assertEquals(original.node, editing.mathInput.rootNode)
+        // 저장된 수식이 한 줄 입력기 토큰으로 불러와지고 커서는 끝에 위치
+        assertEquals(listOf("x"), editing.editor.tokens)
+        assertEquals(1, editing.editor.cursor)
         type("^", "2")
         viewModel.onAction(GraphAction.OnSubmitFunction)
 
@@ -123,7 +127,7 @@ class GraphViewModelTest {
         val state = viewModel.state.value
         assertTrue(state.functions.isEmpty())
         assertFalse(state.isEditorOpen)
-        assertEquals(PlaceholderNode, state.mathInput.rootNode)
+        assertTrue(state.editor.tokens.isEmpty())
     }
 
     @Test
@@ -232,7 +236,7 @@ class GraphViewModelTest {
     fun testSelectFunctionFindsKeyPoints() {
         // Given: y = x^2 - 1, 보이는 범위 -5 ~ 5
         viewModel.onAction(GraphAction.OnOpenEditor(null))
-        type("x", "^", "2", MathInputManager.INPUT_RIGHT, "-", "1")
+        type("x", "^", "2", ExpressionEditor.INPUT_RIGHT, "-", "1")
         viewModel.onAction(GraphAction.OnSubmitFunction)
         viewModel.onAction(GraphAction.OnVisibleRangeChange(-5.0, 5.0))
         val id = viewModel.state.value.functions.single().id
@@ -249,5 +253,27 @@ class GraphViewModelTest {
         // When: 빈 곳 탭 -> 선택 해제
         viewModel.onAction(GraphAction.OnSelectFunction(null))
         assertTrue(viewModel.state.value.keyPoints.isEmpty())
+    }
+
+    @Test
+    fun testPreviewWhileTyping() {
+        // Given: 입력 패널 열기
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+
+        // When: "x^" 까지 입력 (아직 미완성)
+        type("x", "^")
+        // Then: 미리보기 없음
+        assertEquals(null, viewModel.state.value.previewNode)
+
+        // When: "2" 까지 입력해 x^2 완성
+        type("2")
+        // Then: 미리보기가 그래프 목록에 포함됨
+        val state = viewModel.state.value
+        assertEquals(PREVIEW_FUNCTION_ID, state.displayedFunctions.single().id)
+        assertEquals(9.0, state.displayedFunctions.single().evaluate(3.0), 0.001)
+
+        // When: 닫기 -> 미리보기 사라짐
+        viewModel.onAction(GraphAction.OnCloseEditor)
+        assertTrue(viewModel.state.value.displayedFunctions.isEmpty())
     }
 }

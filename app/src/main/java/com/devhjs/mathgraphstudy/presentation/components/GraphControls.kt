@@ -70,7 +70,7 @@ private fun FunctionListPanel(
     LazyColumn(
         modifier = modifier.background(AppColors.Panel),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (state.functions.isEmpty()) {
             item {
@@ -86,9 +86,14 @@ private fun FunctionListPanel(
             }
         }
 
+        if (state.functions.isNotEmpty()) {
+            item { SectionTitle("함수") }
+        }
+
         items(state.functions, key = { it.id }) { function ->
             FunctionItem(
                 function = function,
+                isSelected = function.id == state.selectedFunctionId,
                 onEdit = { onAction(GraphAction.OnOpenEditor(function.id)) },
                 onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
                 onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
@@ -96,14 +101,7 @@ private fun FunctionListPanel(
         }
 
         if (state.parameters.isNotEmpty()) {
-            item {
-                Text(
-                    text = "매개변수",
-                    style = AppTextStyles.smallTextBold,
-                    color = AppColors.TextSecondary,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                )
-            }
+            item { SectionTitle("매개변수", modifier = Modifier.padding(top = 8.dp)) }
             items(state.parameters, key = { "param-${it.name}" }) { parameter ->
                 ParameterSlider(
                     parameter = parameter,
@@ -146,6 +144,17 @@ private fun FunctionListPanel(
     }
 }
 
+/** 목록 구역 제목 (예: "함수", "매개변수") */
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = AppTextStyles.smallTextBold,
+        color = AppColors.TextSecondary,
+        modifier = modifier.padding(start = 4.dp)
+    )
+}
+
 /**
  * 함수 입력/편집 패널입니다.
  * 상단에 입력 방식(직접 입력/템플릿) 선택과 닫기, 그 아래에 입력창과 고정 키패드를 배치합니다.
@@ -158,9 +167,11 @@ private fun FunctionEditorPanel(
 ) {
     BackHandler { onAction(GraphAction.OnCloseEditor) }
 
+    // 가로 모드처럼 높이가 낮으면 키패드가 잘리지 않도록 패널 전체를 스크롤
     Column(
         modifier = modifier
             .background(AppColors.Panel)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -189,13 +200,7 @@ private fun FunctionEditorPanel(
         }
 
         if (state.isTemplateMode) {
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                BeginnerModeInput(state, onAction)
-            }
+            BeginnerModeInput(state, onAction)
             Button(
                 onClick = { onAction(GraphAction.OnSubmitFunction) },
                 modifier = Modifier

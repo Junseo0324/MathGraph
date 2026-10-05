@@ -2,8 +2,10 @@ package com.devhjs.mathgraphstudy.core.di
 
 import com.devhjs.mathgraphstudy.data.repository.GraphFunctionRepositoryImpl
 import com.devhjs.mathgraphstudy.data.repository.ParameterRepositoryImpl
+import com.devhjs.mathgraphstudy.data.repository.UsageRepositoryImpl
 import com.devhjs.mathgraphstudy.domain.repository.GraphFunctionRepository
 import com.devhjs.mathgraphstudy.domain.repository.ParameterRepository
+import com.devhjs.mathgraphstudy.domain.repository.UsageRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindParameterRepository(
         impl: ParameterRepositoryImpl
     ): ParameterRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUsageRepository(
+        impl: UsageRepositoryImpl
+    ): UsageRepository
 }
