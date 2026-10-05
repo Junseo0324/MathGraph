@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
@@ -77,6 +78,9 @@ private data class KeypadKey(val label: String, val type: KeyType, val input: St
 private val functionKeys = listOf("sin", "cos", "tan", "log", "ln").map { KeypadKey(it, KeyType.FUNCTION) } +
     KeypadKey("e", KeyType.VARIABLE)
 
+// 매개변수 키 (슬라이더로 값을 바꿀 수 있는 문자)
+private val parameterKeys = Parameter.NAMES.map { KeypadKey(it, KeyType.VARIABLE) }
+
 private val keypadRows = listOf(
     listOf(
         KeypadKey("x", KeyType.VARIABLE),
@@ -114,7 +118,7 @@ private val keypadRows = listOf(
 
 /**
  * 수식 입력용 키패드입니다. 스크롤 없이 한 화면에 모든 키가 보이도록 고정 격자로 배치합니다.
- * 맨 윗줄은 함수, 아래 4줄은 변수/숫자/연산자/이동 키입니다.
+ * 맨 윗줄은 함수, 둘째 줄은 매개변수(a, b, ...), 아래 4줄은 변수/숫자/연산자/이동 키입니다.
  */
 @Composable
 fun AdvancedModeKeypad(
@@ -129,6 +133,20 @@ fun AdvancedModeKeypad(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             functionKeys.forEach { key ->
+                KeypadButton(
+                    key = key,
+                    onClick = { onAction(GraphAction.OnInput(key.input)) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            parameterKeys.forEach { key ->
                 KeypadButton(
                     key = key,
                     onClick = { onAction(GraphAction.OnInput(key.input)) },
@@ -182,7 +200,7 @@ private fun KeypadButton(
             Text(
                 text = key.label,
                 style = if (key.type == KeyType.NUMBER) AppTextStyles.largeTextBold else AppTextStyles.normalTextRegular,
-                fontStyle = if (key.input == "x") FontStyle.Italic else FontStyle.Normal
+                fontStyle = if (key.type == KeyType.VARIABLE && key.input != "pi") FontStyle.Italic else FontStyle.Normal
             )
         }
     }

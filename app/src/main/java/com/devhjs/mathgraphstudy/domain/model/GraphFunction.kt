@@ -1,6 +1,7 @@
 package com.devhjs.mathgraphstudy.domain.model
 
 import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
+import com.devhjs.mathgraphstudy.domain.model.math.parameterNames
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
 import com.devhjs.mathgraphstudy.domain.model.math.toExpressionNode
@@ -25,6 +26,13 @@ data class GraphFunction(
     /** 사람이 읽기 쉬운 수식 문자열 (예: "2x+1") */
     val expression: String get() = node.toDisplayString()
 
-    /** x 에서의 함수값. 정의되지 않으면 NaN 또는 무한대 */
-    fun evaluate(x: Double): Double = expressionNode.evaluate(x)
+    /** 수식에 쓰인 매개변수 이름들 (예: a·sin(bx) -> {a, b}) */
+    val parameterNames: Set<String> by lazy { node.parameterNames() }
+
+    /**
+     * x 에서의 함수값. 정의되지 않으면 NaN 또는 무한대
+     * @param params 매개변수 값 (이름 -> 값)
+     */
+    fun evaluate(x: Double, params: Map<String, Double> = emptyMap()): Double =
+        expressionNode.evaluate(x, params)
 }

@@ -16,7 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
+import com.devhjs.mathgraphstudy.presentation.components.GraphArea
 import com.devhjs.mathgraphstudy.presentation.components.GraphContentPortrait
 
 @Composable
@@ -50,20 +50,10 @@ fun GraphScreen(
     }
 
     if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        GraphCanvas(
-            functions = state.functions,
+        GraphArea(
+            state = state,
             viewport = viewport,
-            intersections = state.intersections,
-            selectedIntersection = state.selectedIntersection,
-            onVisibleRangeChange = { startX, endX ->
-                onAction(GraphAction.OnVisibleRangeChange(startX, endX))
-            },
-            onIntersectionSelected = { point ->
-                onAction(GraphAction.OnSelectIntersection(point))
-            },
-            onIntersectionDismiss = {
-                onAction(GraphAction.OnDismissIntersectionInfo)
-            }
+            onAction = onAction
         )
     } else {
         GraphContentPortrait(viewport = viewport, state = state, onAction = onAction)

@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.presentation.math
 
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
 import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
 import com.devhjs.mathgraphstudy.domain.model.math.NegateNode
@@ -62,7 +63,7 @@ object MathInputManager {
          }
 
         // 4. Variables
-        if (input == "x" || input == "e" || input == "pi") {
+        if (input == "x" || input == "e" || input == "pi" || input in Parameter.NAMES) {
             return handleVariableInput(state, input)
         }
 

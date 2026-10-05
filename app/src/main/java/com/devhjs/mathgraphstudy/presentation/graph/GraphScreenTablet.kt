@@ -32,7 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
-import com.devhjs.mathgraphstudy.presentation.components.GraphCanvas
+import com.devhjs.mathgraphstudy.presentation.components.GraphArea
 import com.devhjs.mathgraphstudy.presentation.components.GraphControls
 
 @Composable
@@ -48,21 +48,11 @@ fun GraphScreenTablet(
         color = AppColors.Background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            GraphCanvas(
-                functions = state.functions,
+            GraphArea(
+                state = state,
                 viewport = viewport,
+                onAction = onAction,
                 controlsAlignment = Alignment.TopStart, // 오른쪽 패널에 가리지 않도록
-                intersections = state.intersections,
-                selectedIntersection = state.selectedIntersection,
-                onVisibleRangeChange = { startX, endX ->
-                    onAction(GraphAction.OnVisibleRangeChange(startX, endX))
-                },
-                onIntersectionSelected = { point ->
-                    onAction(GraphAction.OnSelectIntersection(point))
-                },
-                onIntersectionDismiss = {
-                    onAction(GraphAction.OnDismissIntersectionInfo)
-                }
             )
 
             Row(

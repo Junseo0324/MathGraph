@@ -30,20 +30,10 @@ fun GraphContentPortrait(
                 .weight(if (state.isEditorOpen) 1f else 0.6f)
                 .fillMaxWidth()
         ) {
-            GraphCanvas(
-                functions = state.functions,
+            GraphArea(
+                state = state,
                 viewport = viewport,
-                intersections = state.intersections,
-                selectedIntersection = state.selectedIntersection,
-                onVisibleRangeChange = { startX, endX ->
-                    onAction(GraphAction.OnVisibleRangeChange(startX, endX))
-                },
-                onIntersectionSelected = { point ->
-                    onAction(GraphAction.OnSelectIntersection(point))
-                },
-                onIntersectionDismiss = {
-                    onAction(GraphAction.OnDismissIntersectionInfo)
-                }
+                onAction = onAction
             )
         }
 

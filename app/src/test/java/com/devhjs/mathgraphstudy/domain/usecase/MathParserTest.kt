@@ -2,6 +2,7 @@ package com.devhjs.mathgraphstudy.domain.usecase
 
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.lang.Math.PI
 
@@ -158,5 +159,15 @@ class MathParserTest {
         // Given & When: 피연산자가 부족한 수식
         // Then: 조용히 잘못된 값을 내지 않고 예외가 발생해야 함
         parser.parseToNode("2 +")
+    }
+
+    @Test
+    fun testParameters() {
+        // Given: 매개변수가 섞인 수식 (곱셈 기호 생략)
+        val node = parser.parseToNode("ax + b")
+
+        // When & Then: 매개변수 값을 넣어 계산, 값이 없으면 NaN
+        assertEquals(7.0, node.evaluate(3.0, mapOf("a" to 2.0, "b" to 1.0)), 0.001)
+        assertTrue(node.evaluate(3.0).isNaN())
     }
 }

@@ -19,6 +19,7 @@ class CalculateIntersectionsUseCase @Inject constructor() {
      * @param functions 검사할 함수 목록 (isVisible이 true인 것만 계산)
      * @param rangeStart 검사할 x축 시작 범위 (Viewport minX)
      * @param rangeEnd 검사할 x축 끝 범위 (Viewport maxX)
+     * @param params 매개변수 값 (이름 -> 값)
      * @param step 구간을 나눌 간격. 기본값은 범위를 [SEARCH_STEPS]개로 나눈 값이라
      *             확대(범위가 좁음)할수록 촘촘하게, 축소할수록 성기게 탐색합니다.
      * @return 교차점의 (x, y) 좌표 리스트
@@ -27,6 +28,7 @@ class CalculateIntersectionsUseCase @Inject constructor() {
         functions: List<GraphFunction>,
         rangeStart: Double,
         rangeEnd: Double,
+        params: Map<String, Double> = emptyMap(),
         step: Double = (rangeEnd - rangeStart) / SEARCH_STEPS
     ): List<Pair<Double, Double>> {
         val visibleFunctions = functions.filter { it.isVisible }
@@ -44,23 +46,23 @@ class CalculateIntersectionsUseCase @Inject constructor() {
 
                 var x = rangeStart
                 while (x < rangeEnd) {
-                    val y1_a = f1.evaluate(x) // 함수 1의 높이
-                    val y2_a = f2.evaluate(x) // 함수 2의 높이
+                    val y1_a = f1.evaluate(x, params) // 함수 1의 높이
+                    val y2_a = f2.evaluate(x, params) // 함수 2의 높이
                     val diff_a = y1_a - y2_a // 차이 (a)
 
                     val nextX = x + step
-                    val y1_b = f1.evaluate(nextX) // 함수 1의 높이
-                    val y2_b = f2.evaluate(nextX) // 함수 2의 높이
+                    val y1_b = f1.evaluate(nextX, params) // 함수 1의 높이
+                    val y2_b = f2.evaluate(nextX, params) // 함수 2의 높이
                     val diff_b = y1_b - y2_b // 차이 (b)
 
                     // 그 전 step 과 비교해서 부호가 다르면 교차했는지 확인
                     if (diff_a * diff_b <= 0.0) {
                         // 교차했는지 확인
-                        val rootX = bisection(f1, f2, x, nextX) // 이분 탐색으로 교차점 x 찾기
-                        val rootY = f1.evaluate(rootX) // 그때의 y 값
+                        val rootX = bisection(f1, f2, x, nextX, params) // 이분 탐색으로 교차점 x 찾기
+                        val rootY = f1.evaluate(rootX, params) // 그때의 y 값
 
                         // 실제 교차점이 있는지 체크하기
-                        if (abs(f1.evaluate(rootX) - f2.evaluate(rootX)) < tolerance) {
+                        if (abs(f1.evaluate(rootX, params) - f2.evaluate(rootX, params)) < tolerance) {
                             // 리스트에 이미 가까운 값이 있다면 등록하지 않음. (중복 방지)
                             val existing = intersections.find {
                                 abs(it.first - rootX) < tolerance && abs(it.second - rootY) < tolerance
@@ -87,17 +89,24 @@ class CalculateIntersectionsUseCase @Inject constructor() {
      * @param b 구간 끝
      * @param tol 허용 오차 (Tolerance)
      */
-    private fun bisection(f1: GraphFunction, f2: GraphFunction, a: Double, b: Double, tol: Double = 1e-5): Double {
+    private fun bisection(
+        f1: GraphFunction,
+        f2: GraphFunction,
+        a: Double,
+        b: Double,
+        params: Map<String, Double>,
+        tol: Double = 1e-5
+    ): Double {
         var low = a
         var high = b
         var mid = (low + high) / 2.0
 
         repeat(50) { // Max iterations
-            val diffMid = f1.evaluate(mid) - f2.evaluate(mid)
+            val diffMid = f1.evaluate(mid, params) - f2.evaluate(mid, params)
 
             if (abs(diffMid) < tol) return mid
 
-            val diffLow = f1.evaluate(low) - f2.evaluate(low)
+            val diffLow = f1.evaluate(low, params) - f2.evaluate(low, params)
             if (diffLow * diffMid < 0) {
                 high = mid
             } else {

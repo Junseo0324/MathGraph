@@ -165,10 +165,14 @@ fun MathNodeView(
                         Text(text = "|")
                     }
                 } else {
+                    // 인자가 한 글자(숫자/변수/빈 칸)가 아니면 sin(bx) 처럼 괄호로 감싸 범위를 분명히 함
+                    val needsParens = node.arg !is NumberNode && node.arg !is VariableNode &&
+                        node.arg !is PlaceholderNode && node.arg !is ParenNode
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = node.func.symbol)
-                        Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+                        if (needsParens) Text(text = "(") else Spacer(modifier = Modifier.padding(horizontal = 2.dp))
                         MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                        if (needsParens) Text(text = ")")
                     }
                 }
             }

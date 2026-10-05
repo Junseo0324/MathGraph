@@ -1,5 +1,6 @@
 package com.devhjs.mathgraphstudy.domain.model.math
 
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 
@@ -25,7 +26,11 @@ fun VisualMathNode.toDisplayString(): String {
             when (func) {
                 MathFunction.SQRT -> "${func.symbol}(${arg.toDisplayString()})"
                 MathFunction.ABS -> "|${arg.toDisplayString()}|"
-                else -> "${func.symbol} ${arg.toDisplayString()}"
+                else -> if (arg is NumberNode || arg is VariableNode || arg is ParenNode) {
+                    "${func.symbol} ${arg.toDisplayString()}"
+                } else {
+                    "${func.symbol}(${arg.toDisplayString()})"
+                }
             }
         }
         is PowerNode -> {
@@ -35,6 +40,17 @@ fun VisualMathNode.toDisplayString(): String {
         is NegateNode -> "-${operand.toDisplayString()}"
         PlaceholderNode -> "?"
     }
+}
+
+/** 수식 트리에 쓰인 매개변수 이름들을 모읍니다. */
+fun VisualMathNode.parameterNames(): Set<String> = when (this) {
+    is VariableNode -> if (name in Parameter.NAMES) setOf(name) else emptySet()
+    is BinaryOpNode -> left.parameterNames() + right.parameterNames()
+    is FunctionNode -> arg.parameterNames()
+    is PowerNode -> base.parameterNames() + exponent.parameterNames()
+    is ParenNode -> inner.parameterNames()
+    is NegateNode -> operand.parameterNames()
+    is NumberNode, PlaceholderNode -> emptySet()
 }
 
 /**

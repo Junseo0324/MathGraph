@@ -7,18 +7,24 @@ import com.devhjs.mathgraphstudy.core.di.DefaultDispatcher
 import com.devhjs.mathgraphstudy.domain.error.DataError
 import com.devhjs.mathgraphstudy.domain.model.FunctionInput
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.KeyPoint
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.domain.model.Result
 import com.devhjs.mathgraphstudy.domain.usecase.BuildFunctionNodeUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.DeleteGraphFunctionUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.FindKeyPointsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveGraphFunctionsUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.ObserveParametersUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveGraphFunctionUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.SaveParameterUseCase
 import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
 import com.devhjs.mathgraphstudy.presentation.math.MathInputState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +42,9 @@ class GraphViewModel @Inject constructor(
     private val saveGraphFunctionUseCase: SaveGraphFunctionUseCase,
     private val deleteGraphFunctionUseCase: DeleteGraphFunctionUseCase,
     private val calculateIntersectionsUseCase: CalculateIntersectionsUseCase,
+    private val findKeyPointsUseCase: FindKeyPointsUseCase,
+    private val observeParametersUseCase: ObserveParametersUseCase,
+    private val saveParameterUseCase: SaveParameterUseCase,
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher
 ) : ViewModel() {
     private val _state = MutableStateFlow(GraphState())
@@ -44,11 +53,16 @@ class GraphViewModel @Inject constructor(
     private val _events = Channel<GraphEvent>()
     val events = _events.receiveAsFlow()
 
-    private var intersectionJob: Job? = null
+    private var analysisJob: Job? = null
+    private var animationJob: Job? = null
     private var functionAddedCount = 0
+
+    // 저장된 모든 매개변수 (화면에는 함수에 쓰인 것만 표시)
+    private var allParameters: List<Parameter> = emptyList()
 
     init {
         observeFunctions()
+        observeParameters()
     }
 
     /**
@@ -126,16 +140,37 @@ class GraphViewModel @Inject constructor(
                     state.copy(
                         visibleStartX = action.startX,
                         visibleEndX = action.endX,
-                        selectedIntersection = null // 뷰포트 변경 시 선택 해제
+                        selectedPoint = null // 뷰포트 변경 시 선택 해제
                     )
                 }
-                triggerIntersectionCalculation()
+                triggerAnalysis()
             }
-            is GraphAction.OnSelectIntersection -> {
-                _state.update { it.copy(selectedIntersection = action.point) }
+            is GraphAction.OnSelectFunction -> {
+                _state.update {
+                    it.copy(
+                        selectedFunctionId = action.id,
+                        selectedPoint = null,
+                        keyPoints = if (action.id == null) emptyList() else it.keyPoints
+                    )
+                }
+                triggerAnalysis()
             }
-            GraphAction.OnDismissIntersectionInfo -> {
-                _state.update { it.copy(selectedIntersection = null) }
+            is GraphAction.OnSelectPoint -> {
+                _state.update { it.copy(selectedPoint = action.point) }
+            }
+            GraphAction.OnDismissPointInfo -> {
+                _state.update { it.copy(selectedPoint = null) }
+            }
+            is GraphAction.OnParameterChange -> {
+                // 재생 중인 매개변수를 직접 움직이면 재생을 멈춤
+                if (_state.value.animatingParameter == action.name) stopAnimation(save = false)
+                updateParameterValue(action.name, action.value)
+            }
+            is GraphAction.OnParameterChangeFinished -> saveParameter(action.name)
+            is GraphAction.OnToggleParameterAnimation -> {
+                val wasAnimating = _state.value.animatingParameter == action.name
+                stopAnimation(save = true)
+                if (!wasAnimating) startAnimation(action.name)
             }
             GraphAction.OnOpenLicenses,
             GraphAction.OnCloseLicenses -> Unit
@@ -151,13 +186,108 @@ class GraphViewModel @Inject constructor(
             observeGraphFunctionsUseCase().collect { result ->
                 when (result) {
                     is Result.Success -> {
-                        _state.update { it.copy(functions = result.data) }
-                        triggerIntersectionCalculation()
+                        val functions = result.data
+                        _state.update {
+                            it.copy(
+                                functions = functions,
+                                parameters = usedParameters(functions, allParameters),
+                                // 선택했던 함수가 삭제되면 선택 해제
+                                selectedFunctionId = it.selectedFunctionId?.takeIf { id -> functions.any { f -> f.id == id } }
+                            )
+                        }
+                        triggerAnalysis()
                     }
                     is Result.Error -> sendError(result.error.message())
                 }
             }
         }
+    }
+
+    /**
+     * 저장된 매개변수를 구독합니다.
+     * 자동 재생 중인 매개변수는 화면의 값이 더 최신이므로 덮어쓰지 않습니다.
+     */
+    private fun observeParameters() {
+        viewModelScope.launch {
+            observeParametersUseCase().collect { result ->
+                when (result) {
+                    is Result.Success -> {
+                        allParameters = result.data
+                        _state.update { state ->
+                            val stored = usedParameters(state.functions, result.data)
+                            state.copy(
+                                parameters = stored.map { parameter ->
+                                    if (parameter.name == state.animatingParameter) {
+                                        state.parameters.find { it.name == parameter.name } ?: parameter
+                                    } else {
+                                        parameter
+                                    }
+                                }
+                            )
+                        }
+                        triggerAnalysis()
+                    }
+                    is Result.Error -> sendError(result.error.message())
+                }
+            }
+        }
+    }
+
+    /** 함수들에 실제로 쓰인 매개변수만 이름 순으로 고릅니다. */
+    private fun usedParameters(functions: List<GraphFunction>, parameters: List<Parameter>): List<Parameter> {
+        val names = functions.flatMap { it.parameterNames }.toSet()
+        return parameters.filter { it.name in names }.sortedBy { it.name }
+    }
+
+    /** 화면의 매개변수 값만 바꿉니다. (저장은 슬라이더를 놓을 때) */
+    private fun updateParameterValue(name: String, value: Double) {
+        _state.update { state ->
+            state.copy(
+                parameters = state.parameters.map {
+                    if (it.name == name) it.copy(value = value.coerceIn(it.min, it.max)) else it
+                },
+                selectedPoint = null
+            )
+        }
+        triggerAnalysis()
+    }
+
+    private fun saveParameter(name: String) {
+        val parameter = _state.value.parameters.find { it.name == name } ?: return
+        viewModelScope.launch {
+            when (val result = saveParameterUseCase(parameter)) {
+                is Result.Success -> Unit
+                is Result.Error -> sendError(result.error.message())
+            }
+        }
+    }
+
+    /**
+     * 매개변수를 최소 ~ 최대 사이에서 왕복하며 자동으로 움직입니다. (한 방향 약 4초)
+     * 값이 바뀔 때 그래프가 어떻게 변하는지 관찰하는 학습용 기능입니다.
+     */
+    private fun startAnimation(name: String) {
+        _state.update { it.copy(animatingParameter = name) }
+        animationJob = viewModelScope.launch {
+            var direction = 1
+            while (true) {
+                val parameter = _state.value.parameters.find { it.name == name } ?: break
+                val delta = (parameter.max - parameter.min) / ANIMATION_DURATION_FRAMES
+                var next = parameter.value + direction * delta
+                if (next >= parameter.max) { next = parameter.max; direction = -1 }
+                if (next <= parameter.min) { next = parameter.min; direction = 1 }
+                updateParameterValue(name, next)
+                delay(ANIMATION_FRAME_MS)
+            }
+        }
+    }
+
+    private fun stopAnimation(save: Boolean) {
+        val name = _state.value.animatingParameter ?: return
+        animationJob?.cancel()
+        animationJob = null
+        _state.update { it.copy(animatingParameter = null) }
+        if (save) saveParameter(name)
     }
 
     /**
@@ -233,32 +363,40 @@ class GraphViewModel @Inject constructor(
     }
 
     /**
-     * 그래프 함수나 보이는 범위가 변경될 때 교차점 계산을 요청합니다.
+     * 함수, 매개변수, 보이는 범위, 선택한 함수가 바뀔 때 교점과 특징점 계산을 요청합니다.
      * 진행 중인 계산이 있으면 취소하고 최신 상태로 다시 계산합니다.
      */
-    private fun triggerIntersectionCalculation() {
-        intersectionJob?.cancel()
-        intersectionJob = viewModelScope.launch {
-            val intersections = calculateIntersections(_state.value)
-            _state.update { it.copy(intersections = intersections) }
+    private fun triggerAnalysis() {
+        analysisJob?.cancel()
+        analysisJob = viewModelScope.launch {
+            val state = _state.value
+            val (intersections, keyPoints) = withContext(defaultDispatcher) {
+                calculateIntersections(state) to findKeyPoints(state)
+            }
+            _state.update { it.copy(intersections = intersections, keyPoints = keyPoints) }
         }
     }
 
-    /**
-     * 현재 보이는 범위(양옆 여유 포함) 내에서 활성화된 함수들 간의 교차점을
-     * 백그라운드 스레드에서 비동기로 계산합니다.
-     */
-    private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(defaultDispatcher) {
+    /** 현재 보이는 범위(양옆 여유 포함) 내에서 보이는 함수들 간의 교차점을 계산합니다. */
+    private fun calculateIntersections(state: GraphState): List<Offset> {
         val buffer = (state.visibleEndX - state.visibleStartX) * 0.1
         val intersections = calculateIntersectionsUseCase(
             functions = state.functions,
             rangeStart = state.visibleStartX - buffer,
-            rangeEnd = state.visibleEndX + buffer
+            rangeEnd = state.visibleEndX + buffer,
+            params = state.parameterValues
         )
 
-        intersections.map { (x, y) ->
+        return intersections.map { (x, y) ->
             Offset(x.toFloat(), y.toFloat())
         }
+    }
+
+    /** 선택한 함수의 특징점(근, y절편, 극대, 극소)을 보이는 범위에서 찾습니다. */
+    private fun findKeyPoints(state: GraphState): List<KeyPoint> {
+        val function = state.functions.find { it.id == state.selectedFunctionId && it.isVisible }
+            ?: return emptyList()
+        return findKeyPointsUseCase(function, state.visibleStartX, state.visibleEndX, state.parameterValues)
     }
 
     /**
@@ -272,6 +410,9 @@ class GraphViewModel @Inject constructor(
     }
 
     private companion object {
+        const val ANIMATION_FRAME_MS = 16L
+        const val ANIMATION_DURATION_FRAMES = 240.0 // 최소 -> 최대 한 번 가는 데 걸리는 프레임 수 (약 4초)
+
         val FUNCTION_COLORS = listOf(
             0xFF42A5F5, // Blue
             0xFFEF5350, // Red

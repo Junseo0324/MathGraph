@@ -3,6 +3,8 @@ package com.devhjs.mathgraphstudy.presentation.graph
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.KeyPoint
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.presentation.math.MathInputState
 
@@ -19,5 +21,16 @@ data class GraphState(
     val visibleStartX: Double = -15.0, // 화면에 보이는 x 범위 (교점 탐색 범위)
     val visibleEndX: Double = 15.0,
     val intersections: List<Offset> = emptyList(),
-    val selectedIntersection: Offset? = null // 선택된 교점 (클릭 시 좌표 표시용)
-)
+    val parameters: List<Parameter> = emptyList(), // 함수에 쓰인 매개변수 (슬라이더)
+    val animatingParameter: String? = null, // 자동으로 움직이는 중인 매개변수 이름
+    val selectedFunctionId: String? = null, // 곡선을 탭해 선택한 함수 (특징점 표시)
+    val keyPoints: List<KeyPoint> = emptyList(), // 선택한 함수의 근, y절편, 극대, 극소
+    val selectedPoint: GraphPoint? = null // 탭한 교점/특징점 (좌표 표시용)
+) {
+    /** 수식 계산에 넘길 매개변수 값 (이름 -> 값) */
+    val parameterValues: Map<String, Double> get() = parameters.associate { it.name to it.value }
+}
+
+/** 그래프 위에서 좌표를 보여줄 점 (예: "극대 (1.57, 2.00)") */
+@Immutable
+data class GraphPoint(val x: Double, val y: Double, val label: String)

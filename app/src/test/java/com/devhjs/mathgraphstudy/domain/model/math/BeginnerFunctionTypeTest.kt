@@ -51,4 +51,14 @@ class BeginnerFunctionTypeTest {
         // When & Then: 수식을 만들지 않음
         assertNull(BeginnerFunctionType.LINEAR.buildExpression(coefficients))
     }
+
+    @Test
+    fun testNewTemplates() {
+        // 지수: 비워 두면 y = 2^x
+        assertEquals(8.0, evaluate(BeginnerFunctionType.EXPONENTIAL, emptyMap(), 3.0), 0.001)
+        // 로그: y = 2·log(x + 0) + 1, x = 100 -> 5
+        assertEquals(5.0, evaluate(BeginnerFunctionType.LOGARITHM, mapOf("a" to "2", "c" to "1"), 100.0), 0.001)
+        // 삼각: y = 2·sin(x) + 1, x = π/2 -> 3
+        assertEquals(3.0, evaluate(BeginnerFunctionType.SINE, mapOf("a" to "2", "d" to "1"), Math.PI / 2), 0.001)
+    }
 }

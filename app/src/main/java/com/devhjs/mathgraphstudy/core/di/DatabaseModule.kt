@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.devhjs.mathgraphstudy.data.datasource.local.AppDatabase
 import com.devhjs.mathgraphstudy.data.datasource.local.GraphFunctionDao
+import com.devhjs.mathgraphstudy.data.datasource.local.ParameterDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,6 +21,10 @@ object DatabaseModule {
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "math_graph.db")
             .build()
+
+    @Provides
+    fun provideParameterDao(database: AppDatabase): ParameterDao =
+        database.parameterDao()
 
     @Provides
     fun provideGraphFunctionDao(database: AppDatabase): GraphFunctionDao =

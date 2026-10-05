@@ -1,15 +1,21 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
 import com.devhjs.mathgraphstudy.domain.error.DataError
+import com.devhjs.mathgraphstudy.domain.model.KeyPoint
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.domain.service.MathParser
 import com.devhjs.mathgraphstudy.domain.usecase.BuildFunctionNodeUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.DeleteGraphFunctionUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.FindKeyPointsUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.ObserveParametersUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.SaveParameterUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.ObserveGraphFunctionsUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.SaveGraphFunctionUseCase
 import com.devhjs.mathgraphstudy.fake.FakeGraphFunctionRepository
+import com.devhjs.mathgraphstudy.fake.FakeParameterRepository
+import com.devhjs.mathgraphstudy.presentation.math.MathInputManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -29,6 +35,7 @@ import org.junit.Test
 class GraphViewModelTest {
 
     private lateinit var repository: FakeGraphFunctionRepository
+    private lateinit var parameterRepository: FakeParameterRepository
     private lateinit var viewModel: GraphViewModel
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -37,15 +44,19 @@ class GraphViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeGraphFunctionRepository()
+        parameterRepository = FakeParameterRepository()
         viewModel = createViewModel()
     }
 
     private fun createViewModel() = GraphViewModel(
         buildFunctionNodeUseCase = BuildFunctionNodeUseCase(MathParser()),
         observeGraphFunctionsUseCase = ObserveGraphFunctionsUseCase(repository),
-        saveGraphFunctionUseCase = SaveGraphFunctionUseCase(repository),
+        saveGraphFunctionUseCase = SaveGraphFunctionUseCase(repository, parameterRepository),
         deleteGraphFunctionUseCase = DeleteGraphFunctionUseCase(repository),
         calculateIntersectionsUseCase = CalculateIntersectionsUseCase(),
+        findKeyPointsUseCase = FindKeyPointsUseCase(),
+        observeParametersUseCase = ObserveParametersUseCase(parameterRepository),
+        saveParameterUseCase = SaveParameterUseCase(parameterRepository),
         defaultDispatcher = testDispatcher
     )
 
@@ -195,5 +206,48 @@ class GraphViewModelTest {
         // Then: 저장 실패 메시지
         val event = viewModel.events.first()
         assertEquals(GraphEvent.ShowError(DataError.Local.UNKNOWN.toMessage()), event)
+    }
+
+    @Test
+    fun testParameterSliderChangesFunctionValue() {
+        // Given: y = a·x 추가 (a 는 기본값 1 로 자동 생성)
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+        type("a", "x")
+        viewModel.onAction(GraphAction.OnSubmitFunction)
+        val state = viewModel.state.value
+        assertEquals(listOf("a"), state.parameters.map { it.name })
+        assertEquals(3.0, state.functions.single().evaluate(3.0, state.parameterValues), 0.001)
+
+        // When: 슬라이더로 a = 2 로 바꾸고 놓음
+        viewModel.onAction(GraphAction.OnParameterChange("a", 2.0))
+        viewModel.onAction(GraphAction.OnParameterChangeFinished("a"))
+
+        // Then: 함수값이 바뀌고 저장소에도 저장됨
+        val changed = viewModel.state.value
+        assertEquals(6.0, changed.functions.single().evaluate(3.0, changed.parameterValues), 0.001)
+        assertEquals(2.0, parameterRepository.current.single().value, 0.001)
+    }
+
+    @Test
+    fun testSelectFunctionFindsKeyPoints() {
+        // Given: y = x^2 - 1, 보이는 범위 -5 ~ 5
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+        type("x", "^", "2", MathInputManager.INPUT_RIGHT, "-", "1")
+        viewModel.onAction(GraphAction.OnSubmitFunction)
+        viewModel.onAction(GraphAction.OnVisibleRangeChange(-5.0, 5.0))
+        val id = viewModel.state.value.functions.single().id
+
+        // When: 곡선을 탭해 선택
+        viewModel.onAction(GraphAction.OnSelectFunction(id))
+
+        // Then: 근 2개, 극소 1개, y절편 1개
+        val types = viewModel.state.value.keyPoints.map { it.type }
+        assertEquals(2, types.count { it == KeyPoint.Type.ROOT })
+        assertEquals(1, types.count { it == KeyPoint.Type.MINIMUM })
+        assertEquals(1, types.count { it == KeyPoint.Type.Y_INTERCEPT })
+
+        // When: 빈 곳 탭 -> 선택 해제
+        viewModel.onAction(GraphAction.OnSelectFunction(null))
+        assertTrue(viewModel.state.value.keyPoints.isEmpty())
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -23,37 +24,46 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.KeyPoint
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColorScheme
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.LocalAppColors
+import com.devhjs.mathgraphstudy.presentation.graph.GraphPoint
 import com.devhjs.mathgraphstudy.presentation.graph.GraphViewportState
 import com.devhjs.mathgraphstudy.presentation.graph.rememberGraphViewportState
 import com.devhjs.mathgraphstudy.presentation.math.CurveSampler
 import com.devhjs.mathgraphstudy.presentation.math.GraphGridCalculator
+import com.devhjs.mathgraphstudy.presentation.util.GraphImageSharer
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10
@@ -61,8 +71,10 @@ import kotlin.math.sqrt
 
 // 교점 표시를 위한 최소 줌 레벨 (이 값 이상일 때만 교점 표시)
 private const val MIN_SCALE_FOR_INTERSECTIONS = 10f
-// 교점 선택을 위한 터치 허용 반경 (픽셀 단위)
-private const val INTERSECTION_TAP_RADIUS = 30f
+// 교점/특징점 선택을 위한 터치 허용 반경 (픽셀 단위)
+private const val POINT_TAP_RADIUS = 36f
+// 곡선을 탭해 함수를 선택할 때의 허용 반경 (픽셀 단위)
+private const val CURVE_TAP_RADIUS = 40f
 // 트레이스를 시작할 때 곡선을 고르는 터치 허용 반경 (픽셀 단위)
 private const val TRACE_PICK_RADIUS = 80f
 // 제스처가 멈춘 뒤 보이는 범위를 ViewModel 에 알리기까지 기다리는 시간
@@ -79,21 +91,25 @@ private data class TraceState(val functionId: String, val x: Double)
  * 수학 그래프를 렌더링하고 사용자의 제스처를 처리하는 캔버스 컴포넌트입니다.
  *
  * - 핀치/드래그: 확대·이동
- * - 탭: 교점 선택 (좌표 표시), 빈 곳 탭은 선택/트레이스 해제
+ * - 탭: 교점/특징점 선택 (좌표 표시), 곡선 탭은 함수 선택 (특징점 표시), 빈 곳 탭은 선택/트레이스 해제
  * - 길게 누른 뒤 드래그: 가장 가까운 곡선을 따라가며 (x, y) 표시 (트레이스)
- * - 모서리 버튼: 확대, 축소, 원점으로
+ * - 모서리 버튼: 확대, 축소, 원점으로, 이미지 공유
  *
  * 확대/이동 상태는 [viewport]에 직접 반영하고 그리기 단계에서만 읽으므로,
  * 드래그 중에는 컴포지션 없이 캔버스만 다시 그려집니다.
  *
  * @param viewport 확대/이동 상태
  * @param functions 그릴 그래프 함수들의 리스트 (수식, 색상, 가시성 포함)
+ * @param parameterValues 매개변수 값 (이름 -> 값)
  * @param intersections 두 그래프 간의 교점 좌표 리스트
- * @param selectedIntersection 현재 사용자가 선택한 교점 (선택 시 좌표값 표시)
+ * @param selectedFunctionId 곡선을 탭해 선택한 함수 (굵게 표시, 특징점 표시)
+ * @param keyPoints 선택한 함수의 특징점
+ * @param selectedPoint 현재 사용자가 선택한 교점/특징점 (선택 시 좌표값 표시)
  * @param controlsAlignment 확대/축소/원점 버튼 위치 (태블릿은 오른쪽 패널을 피해 왼쪽에 둠)
  * @param onVisibleRangeChange 화면에 보이는 x 범위가 바뀌었을 때 호출 (제스처가 멈춘 뒤 디바운스)
- * @param onIntersectionSelected 교점을 터치했을 때 호출되는 콜백
- * @param onIntersectionDismiss 교점 선택을 해제할 때 호출되는 콜백 (빈 공간 터치 등)
+ * @param onFunctionSelected 곡선을 탭하면 그 함수 id, 빈 곳을 탭하면 null
+ * @param onPointSelected 교점/특징점을 탭했을 때 호출되는 콜백
+ * @param onPointDismiss 좌표 표시를 닫을 때 호출되는 콜백
  */
 @OptIn(FlowPreview::class)
 @Composable
@@ -101,18 +117,25 @@ fun GraphCanvas(
     modifier: Modifier = Modifier,
     viewport: GraphViewportState = rememberGraphViewportState(),
     functions: List<GraphFunction> = emptyList(),
+    parameterValues: Map<String, Double> = emptyMap(),
     intersections: List<Offset> = emptyList(),
-    selectedIntersection: Offset? = null,
+    selectedFunctionId: String? = null,
+    keyPoints: List<KeyPoint> = emptyList(),
+    selectedPoint: GraphPoint? = null,
     controlsAlignment: Alignment = Alignment.TopEnd,
     onVisibleRangeChange: (Double, Double) -> Unit = { _, _ -> },
-    onIntersectionSelected: (Offset) -> Unit = {},
-    onIntersectionDismiss: () -> Unit = {}
+    onFunctionSelected: (String?) -> Unit = {},
+    onPointSelected: (GraphPoint) -> Unit = {},
+    onPointDismiss: () -> Unit = {}
 ) {
     // 제스처 감지 람다 내에서 최신 상태값을 참조하기 위해 rememberUpdatedState 사용
     val currentFunctions by rememberUpdatedState(functions)
+    val currentParams by rememberUpdatedState(parameterValues)
     val currentIntersections by rememberUpdatedState(intersections)
-    val currentOnIntersectionSelected by rememberUpdatedState(onIntersectionSelected)
-    val currentOnIntersectionDismiss by rememberUpdatedState(onIntersectionDismiss)
+    val currentKeyPoints by rememberUpdatedState(keyPoints)
+    val currentOnFunctionSelected by rememberUpdatedState(onFunctionSelected)
+    val currentOnPointSelected by rememberUpdatedState(onPointSelected)
+    val currentOnPointDismiss by rememberUpdatedState(onPointDismiss)
     val currentOnVisibleRangeChange by rememberUpdatedState(onVisibleRangeChange)
 
     var trace by remember { mutableStateOf<TraceState?>(null) }
@@ -130,10 +153,19 @@ fun GraphCanvas(
     val colors = LocalAppColors.current
     val paints = remember { GraphPaints() }
 
+    // 공유용 이미지 캡처: 캔버스 그리기를 기록해 두었다가 공유 버튼을 누르면 비트맵으로 변환
+    val graphicsLayer = rememberGraphicsLayer()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     Box(modifier = modifier.fillMaxSize()) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .drawWithContent {
+                    graphicsLayer.record { this@drawWithContent.drawContent() }
+                    drawLayer(graphicsLayer)
+                }
                 // 격자/라벨/곡선이 캔버스 영역 밖(상태바, 입력 패널)으로 그려지지 않도록 자름
                 .clipToBounds()
                 .background(colors.background)
@@ -148,7 +180,8 @@ fun GraphCanvas(
                 .pointerInput(viewport) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = { start ->
-                            trace = pickTraceFunction(currentFunctions, viewport, start)
+                            trace = pickFunctionAt(currentFunctions, currentParams, viewport, start, TRACE_PICK_RADIUS)
+                                ?.let { TraceState(it.id, viewport.toGraphX(start.x)) }
                         },
                         onDrag = { change, _ ->
                             // 곡선을 잡았을 때만 이벤트를 소비 (못 잡았으면 일반 이동으로 동작)
@@ -158,43 +191,42 @@ fun GraphCanvas(
                         }
                     )
                 }
-                // 탭(Tap) 제스처 처리 (교점 선택, 선택/트레이스 해제)
+                // 탭(Tap) 제스처 처리: 점 선택 > 곡선 선택 > 선택 해제 순서로 판단
                 .pointerInput(viewport) {
-                    detectTapGestures { tapOffset ->
+                    detectTapGestures { tap ->
                         trace = null
-                        val tappedIntersection = if (viewport.scale >= MIN_SCALE_FOR_INTERSECTIONS) {
-                            // 탭한 화면 위치에서 허용 반경 안에 있는 교점 찾기
-                            currentIntersections.find { point ->
-                                val px = viewport.toScreenX(point.x.toDouble())
-                                val py = viewport.toScreenY(point.y.toDouble())
-                                val dx = tapOffset.x - px
-                                val dy = tapOffset.y - py
-                                sqrt(dx * dx + dy * dy) <= INTERSECTION_TAP_RADIUS
-                            }
-                        } else {
-                            null
+                        val tappedPoint = findTappedPoint(
+                            tap = tap,
+                            viewport = viewport,
+                            intersections = currentIntersections,
+                            keyPoints = currentKeyPoints
+                        )
+                        if (tappedPoint != null) {
+                            currentOnPointSelected(tappedPoint)
+                            return@detectTapGestures
                         }
-
-                        if (tappedIntersection != null) {
-                            currentOnIntersectionSelected(tappedIntersection)
-                        } else {
-                            // 빈 공간을 탭했으면 선택 해제
-                            currentOnIntersectionDismiss()
-                        }
+                        currentOnPointDismiss()
+                        val function = pickFunctionAt(currentFunctions, currentParams, viewport, tap, CURVE_TAP_RADIUS)
+                        currentOnFunctionSelected(function?.id)
                     }
                 }
         ) {
             paints.applyColors(colors)
             drawGrid(viewport, colors, paints)
-            drawFunctions(viewport, functions)
-            drawIntersections(viewport, intersections, selectedIntersection, colors, paints)
-            trace?.let { drawTrace(viewport, functions, it, paints) }
+            drawFunctions(viewport, functions, parameterValues, selectedFunctionId)
+            drawIntersections(viewport, intersections, colors)
+            functions.find { it.id == selectedFunctionId }?.let { drawKeyPoints(viewport, keyPoints, Color(it.color), colors) }
+            selectedPoint?.let { drawSelectedPoint(viewport, it, colors, paints) }
+            trace?.let { drawTrace(viewport, functions, parameterValues, it, paints) }
         }
 
         ViewportButtons(
             onZoomIn = { viewport.zoomBy(ZOOM_STEP) },
             onZoomOut = { viewport.zoomBy(1 / ZOOM_STEP) },
             onReset = { viewport.reset() },
+            onShare = {
+                scope.launch { GraphImageSharer.share(context, graphicsLayer.toImageBitmap()) }
+            },
             modifier = Modifier
                 .align(controlsAlignment)
                 .padding(12.dp)
@@ -202,12 +234,13 @@ fun GraphCanvas(
     }
 }
 
-/** 확대, 축소, 원점으로 버튼 */
+/** 확대, 축소, 원점으로, 공유 버튼 */
 @Composable
 private fun ViewportButtons(
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onReset: () -> Unit,
+    onShare: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -217,6 +250,7 @@ private fun ViewportButtons(
         ViewportButton(Icons.Default.Add, "확대", onZoomIn)
         ViewportButton(Icons.Default.Remove, "축소", onZoomOut)
         ViewportButton(Icons.Default.CenterFocusStrong, "원점으로", onReset)
+        ViewportButton(Icons.Default.Share, "그래프 이미지 공유", onShare)
     }
 }
 
@@ -318,7 +352,12 @@ private fun DrawScope.drawGrid(viewport: GraphViewportState, colors: AppColorSch
 }
 
 /** 보이는 함수들의 곡선을 적응형 샘플링으로 그립니다. */
-private fun DrawScope.drawFunctions(viewport: GraphViewportState, functions: List<GraphFunction>) {
+private fun DrawScope.drawFunctions(
+    viewport: GraphViewportState,
+    functions: List<GraphFunction>,
+    params: Map<String, Double>,
+    selectedFunctionId: String?
+) {
     val sampler = CurveSampler(
         width = size.width,
         height = size.height,
@@ -327,55 +366,74 @@ private fun DrawScope.drawFunctions(viewport: GraphViewportState, functions: Lis
     )
     functions.filter { it.isVisible }.forEach { function ->
         val path = Path()
-        sampler.sample(function::evaluate).forEach { segment ->
+        sampler.sample { x -> function.evaluate(x, params) }.forEach { segment ->
             path.moveTo(segment.first().x, segment.first().y)
             for (i in 1 until segment.size) path.lineTo(segment[i].x, segment[i].y)
         }
-        drawPath(path = path, color = Color(function.color), style = Stroke(width = 3f))
+        // 선택한 함수는 굵게
+        val strokeWidth = if (function.id == selectedFunctionId) 6f else 3f
+        drawPath(path = path, color = Color(function.color), style = Stroke(width = strokeWidth))
     }
 }
 
-/** 교점과, 선택된 교점의 좌표를 그립니다. 충분히 확대했을 때만 표시합니다. (혼잡도 방지) */
+/** 교점을 그립니다. 충분히 확대했을 때만 표시합니다. (혼잡도 방지) */
 private fun DrawScope.drawIntersections(
     viewport: GraphViewportState,
     intersections: List<Offset>,
-    selectedIntersection: Offset?,
-    colors: AppColorScheme,
-    paints: GraphPaints
+    colors: AppColorScheme
 ) {
     if (viewport.scale < MIN_SCALE_FOR_INTERSECTIONS) return
     intersections.forEach { point ->
-        val px = viewport.toScreenX(point.x.toDouble())
-        val py = viewport.toScreenY(point.y.toDouble())
-        // 화면 밖의 교점은 그리지 않음 (약간의 여유분 포함)
-        if (px < -20f || px > size.width + 20f || py < -20f || py > size.height + 20f) return@forEach
-
-        val isSelected = selectedIntersection?.let {
-            abs(it.x - point.x) < 0.001f && abs(it.y - point.y) < 0.001f
-        } ?: false
-
-        // 교점 포인트 그리기 (선택되면 더 크고 강조색)
-        drawCircle(colors.background, radius = if (isSelected) 12f else 8f, center = Offset(px, py))
-        drawCircle(
-            color = if (isSelected) colors.primaryGold else colors.red500,
-            radius = if (isSelected) 8f else 5f,
-            center = Offset(px, py)
-        )
-        if (isSelected) {
-            drawCoordinateLabel(point.x.toDouble(), point.y.toDouble(), Offset(px, py), viewport.scale, paints)
-        }
+        val center = Offset(viewport.toScreenX(point.x.toDouble()), viewport.toScreenY(point.y.toDouble()))
+        if (!isNearCanvas(center)) return@forEach
+        drawCircle(colors.background, radius = 8f, center = center)
+        drawCircle(colors.red500, radius = 5f, center = center)
     }
 }
+
+/** 선택한 함수의 특징점(근, y절편, 극대, 극소)을 함수 색 테두리 원으로 그립니다. */
+private fun DrawScope.drawKeyPoints(
+    viewport: GraphViewportState,
+    keyPoints: List<KeyPoint>,
+    color: Color,
+    colors: AppColorScheme
+) {
+    keyPoints.forEach { point ->
+        val center = Offset(viewport.toScreenX(point.x), viewport.toScreenY(point.y))
+        if (!isNearCanvas(center)) return@forEach
+        drawCircle(colors.background, radius = 9f, center = center)
+        drawCircle(color, radius = 9f, center = center, style = Stroke(width = 4f))
+    }
+}
+
+/** 선택한 점을 강조하고 "이름 (x, y)" 를 표시합니다. */
+private fun DrawScope.drawSelectedPoint(
+    viewport: GraphViewportState,
+    point: GraphPoint,
+    colors: AppColorScheme,
+    paints: GraphPaints
+) {
+    val center = Offset(viewport.toScreenX(point.x), viewport.toScreenY(point.y))
+    if (!isNearCanvas(center)) return
+    drawCircle(colors.background, radius = 12f, center = center)
+    drawCircle(colors.primaryGold, radius = 8f, center = center)
+    drawCoordinateLabel(point.x, point.y, center, viewport.scale, paints, prefix = point.label)
+}
+
+/** 화면 안(약간의 여유 포함)에 있는 점인지 */
+private fun DrawScope.isNearCanvas(point: Offset): Boolean =
+    point.x >= -20f && point.x <= size.width + 20f && point.y >= -20f && point.y <= size.height + 20f
 
 /** 트레이스 중인 곡선 위의 점과 좌표를 그립니다. */
 private fun DrawScope.drawTrace(
     viewport: GraphViewportState,
     functions: List<GraphFunction>,
+    params: Map<String, Double>,
     trace: TraceState,
     paints: GraphPaints
 ) {
     val function = functions.find { it.id == trace.functionId && it.isVisible } ?: return
-    val y = function.evaluate(trace.x)
+    val y = function.evaluate(trace.x, params)
     if (!y.isFinite()) return
     val point = Offset(viewport.toScreenX(trace.x), viewport.toScreenY(y))
 
@@ -387,10 +445,20 @@ private fun DrawScope.drawTrace(
 /**
  * 점 위에 "(x, y)" 좌표 상자를 그립니다. 화면 위쪽 끝이면 점 아래에 그립니다.
  * 확대할수록 더 많은 소수 자릿수를 보여줍니다.
+ *
+ * @param prefix 좌표 앞에 붙일 이름 (예: "극대")
  */
-private fun DrawScope.drawCoordinateLabel(x: Double, y: Double, point: Offset, scale: Float, paints: GraphPaints) {
+private fun DrawScope.drawCoordinateLabel(
+    x: Double,
+    y: Double,
+    point: Offset,
+    scale: Float,
+    paints: GraphPaints,
+    prefix: String? = null
+) {
     val decimals = floor(log10(scale.toDouble())).toInt().coerceIn(2, 6)
-    val text = "(%.${decimals}f, %.${decimals}f)".format(x, y)
+    val coordinates = "(%.${decimals}f, %.${decimals}f)".format(x, y)
+    val text = if (prefix != null) "$prefix $coordinates" else coordinates
     val textWidth = paints.centerText.measureText(text)
     val padding = 10f
     val boxHeight = 44f
@@ -409,23 +477,54 @@ private fun DrawScope.drawCoordinateLabel(x: Double, y: Double, point: Offset, s
     canvas.drawText(text, centerX, top + boxHeight - 13f, paints.centerText)
 }
 
-/** 길게 누른 위치에서 세로로 가장 가까운 곡선을 고릅니다. 반경 안에 없으면 null */
-private fun pickTraceFunction(
+/** 터치 위치에서 세로로 가장 가까운 곡선(반경 [radius] px 안)을 고릅니다. 없으면 null */
+private fun pickFunctionAt(
     functions: List<GraphFunction>,
+    params: Map<String, Double>,
     viewport: GraphViewportState,
-    touch: Offset
-): TraceState? {
+    touch: Offset,
+    radius: Float
+): GraphFunction? {
     val x = viewport.toGraphX(touch.x)
     return functions
         .filter { it.isVisible }
         .mapNotNull { function ->
-            val y = function.evaluate(x)
+            val y = function.evaluate(x, params)
             if (!y.isFinite()) return@mapNotNull null
             function to abs(viewport.toScreenY(y) - touch.y)
         }
-        .filter { (_, distance) -> distance <= TRACE_PICK_RADIUS }
+        .filter { (_, distance) -> distance <= radius }
         .minByOrNull { (_, distance) -> distance }
-        ?.let { (function, _) -> TraceState(function.id, x) }
+        ?.first
+}
+
+/** 탭 위치 근처의 교점/특징점을 찾습니다. 교점은 충분히 확대했을 때만 대상입니다. */
+private fun findTappedPoint(
+    tap: Offset,
+    viewport: GraphViewportState,
+    intersections: List<Offset>,
+    keyPoints: List<KeyPoint>
+): GraphPoint? {
+    fun isNear(x: Double, y: Double): Boolean {
+        val dx = tap.x - viewport.toScreenX(x)
+        val dy = tap.y - viewport.toScreenY(y)
+        return sqrt(dx * dx + dy * dy) <= POINT_TAP_RADIUS
+    }
+
+    keyPoints.firstOrNull { isNear(it.x, it.y) }?.let { return GraphPoint(it.x, it.y, it.type.label()) }
+    if (viewport.scale >= MIN_SCALE_FOR_INTERSECTIONS) {
+        intersections.firstOrNull { isNear(it.x.toDouble(), it.y.toDouble()) }
+            ?.let { return GraphPoint(it.x.toDouble(), it.y.toDouble(), "교점") }
+    }
+    return null
+}
+
+/** 특징점 종류의 화면 표시 이름 */
+private fun KeyPoint.Type.label(): String = when (this) {
+    KeyPoint.Type.ROOT -> "근"
+    KeyPoint.Type.Y_INTERCEPT -> "y절편"
+    KeyPoint.Type.MAXIMUM -> "극대"
+    KeyPoint.Type.MINIMUM -> "극소"
 }
 
 @Preview

@@ -9,6 +9,7 @@ package com.devhjs.mathgraphstudy.domain.service
  * 3. 단항 마이너스 처리 (예: -x, 2^-x, (-3)x)
  * 4. AST(Abstract Syntax Tree) 구성 및 계산
  */
+import com.devhjs.mathgraphstudy.domain.model.Parameter
 import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import javax.inject.Inject
 import kotlin.math.abs
@@ -56,7 +57,7 @@ class MathParser @Inject constructor() {
                 // 숫자일 경우 Constant로 stack에 넣음
                 isNumber(token) -> stack.add(ExpressionNode.Constant(token.toDouble()))
                 // token 일 경우
-                token == "x" || token == "e" || token == "pi" -> stack.add(ExpressionNode.Variable(token))
+                isVariable(token) -> stack.add(ExpressionNode.Variable(token))
                 // 함수일 경우
                 // 함수는 값 하나가 필요. -> 값을 stack에서 꺼내서 UnaryOp 로 만들어 넣음
                 isFunction(token) -> {
@@ -113,7 +114,7 @@ class MathParser @Inject constructor() {
 
         for (token in tokens) {
             when {
-                isNumber(token) || token == "x" || token == "e" || token == "pi" -> outputQueue.add(token)
+                isNumber(token) || isVariable(token) -> outputQueue.add(token)
                 isFunction(token) -> operatorStack.add(token)
                 token == "(" -> operatorStack.add(token)
                 // 전위 단항 연산자는 앞의 연산자를 꺼내지 않고 바로 쌓음
@@ -194,15 +195,15 @@ class MathParser @Inject constructor() {
      */
     fun shouldInsertMultiply(prev: String, curr: String): Boolean {
         // prev 가 숫자,상수,변수인지 판별
-        val isPrevNumber = isNumber(prev) || listOf("x", "e", "pi").contains(prev)
+        val isPrevNumber = isNumber(prev) || isVariable(prev)
         val isPrevRightParen = prev == ")"
 
         // curr 가 숫자,상수,변수인지 판별
-        val isCurrNumber = isNumber(curr) || listOf("x", "e", "pi").contains(curr)
+        val isCurrNumber = isNumber(curr) || isVariable(curr)
         // curr 가 function 인지
         val isCurrFunction = isFunction(curr)
 
-        val isCurrVariable = curr == "x" || curr == "e" || curr == "pi"
+        val isCurrVariable = isVariable(curr)
         val isCurrLeftParen = curr == "("
         
         if (isPrevNumber) {
@@ -253,7 +254,9 @@ class MathParser @Inject constructor() {
                         sb.append(expression[i])
                         i++
                     }
-                    tokens.add(sb.toString())
+                    val word = sb.toString()
+                    // 함수 이름/pi 가 아니면 한 글자씩 나눔 (예: "ax" -> "a", "x")
+                    if (isFunction(word) || word == "pi") tokens.add(word) else word.forEach { tokens.add(it.toString()) }
                 }
                 // +, -, *, /, ^, (, ) 등 연산자 처리
                 else -> {
@@ -267,6 +270,10 @@ class MathParser @Inject constructor() {
 
     /** 해당 토큰이 숫자인지 확인합니다. */
     private fun isNumber(token: String): Boolean = token.toDoubleOrNull() != null
+
+    /** 해당 토큰이 변수(x), 상수(e, pi), 매개변수(a, b, ...)인지 확인합니다. */
+    private fun isVariable(token: String): Boolean =
+        token == "x" || token == "e" || token == "pi" || token in Parameter.NAMES
 
     /** 해당 토큰이 지원되는 수학 함수인지 확인합니다. */
     private fun isFunction(token: String): Boolean = listOf("sin", "cos", "tan", "log", "ln", "exp", "sqrt", "abs").contains(token)

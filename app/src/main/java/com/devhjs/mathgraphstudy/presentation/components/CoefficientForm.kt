@@ -1,6 +1,8 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +26,11 @@ fun CoefficientForm(
     state: GraphState = GraphState(),
     onAction: (GraphAction) -> Unit = {}
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // 항이 많은 템플릿(삼각함수 등)은 화면보다 넓을 수 있어 가로 스크롤
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text("y =", style = AppTextStyles.largeTextBold, color = AppColors.TextPrimary)
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -74,8 +80,39 @@ fun CoefficientForm(
                  Text("+", style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
                  CoefficientInput(state, "c", onAction)
              }
+            BeginnerFunctionType.EXPONENTIAL -> {
+                // y = a·b^x + c
+                CoefficientInput(state, "a", onAction)
+                FormText("·")
+                CoefficientInput(state, "b", onAction)
+                FormText("ˣ +")
+                CoefficientInput(state, "c", onAction)
+            }
+            BeginnerFunctionType.LOGARITHM -> {
+                // y = a·log(x + b) + c
+                CoefficientInput(state, "a", onAction)
+                FormText("log(x +")
+                CoefficientInput(state, "b", onAction)
+                FormText(") +")
+                CoefficientInput(state, "c", onAction)
+            }
+            BeginnerFunctionType.SINE -> {
+                // y = a·sin(bx + c) + d
+                CoefficientInput(state, "a", onAction)
+                FormText("sin(")
+                CoefficientInput(state, "b", onAction)
+                FormText("x +")
+                CoefficientInput(state, "c", onAction)
+                FormText(") +")
+                CoefficientInput(state, "d", onAction)
+            }
         }
     }
+}
+
+@Composable
+private fun FormText(text: String) {
+    Text(text, style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
 }
 
 @Preview(name = "Linear")

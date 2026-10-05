@@ -14,22 +14,31 @@ sealed interface ExpressionNode {
      * @param x 수식에 대입할 변수 x의 값
      * @return 계산된 결과 값 (Double)
      */
-    fun evaluate(x: Double): Double
+    fun evaluate(x: Double, params: Map<String, Double>): Double
+
+    /** 매개변수가 없는 수식을 계산합니다. */
+    fun evaluate(x: Double): Double = evaluate(x, emptyMap())
 
     /**
      * 상수 값을 나타내는 노드입니다.
      * 예: 5, 3.14 등
      */
     data class Constant(val value: Double) : ExpressionNode {
-        override fun evaluate(x: Double) = value
+        override fun evaluate(x: Double, params: Map<String, Double>) = value
     }
 
     /**
-     * 변수(x) 또는 수학 상수(e, pi)를 나타내는 노드입니다.
-     * 'x'일 경우 입력된 x 값을 반환하고, 'e'나 'pi'일 경우 해당 상수 값을 반환합니다.
+     * 변수(x), 수학 상수(e, pi), 매개변수(a, b, ...)를 나타내는 노드입니다.
+     * 'x'일 경우 입력된 x 값을, 'e'나 'pi'일 경우 해당 상수 값을, 매개변수는 params 의 값을 반환합니다.
      */
     data class Variable(val name: String) : ExpressionNode {
-        override fun evaluate(x: Double) = if (name == "x") x else if (name == "e") E else if (name == "pi") PI else 0.0
+        override fun evaluate(x: Double, params: Map<String, Double>) = when (name) {
+            "x" -> x
+            "e" -> E
+            "pi" -> PI
+            // 매개변수(a, b, ...). 값이 정해지지 않았으면 그릴 수 없으므로 NaN
+            else -> params[name] ?: Double.NaN
+        }
     }
 
     /**
@@ -46,7 +55,8 @@ sealed interface ExpressionNode {
         val op: (Double, Double) -> Double,
         val symbol: String
     ) : ExpressionNode {
-        override fun evaluate(x: Double) = op(left.evaluate(x), right.evaluate(x))
+        override fun evaluate(x: Double, params: Map<String, Double>) =
+            op(left.evaluate(x, params), right.evaluate(x, params))
     }
 
     /**
@@ -61,6 +71,6 @@ sealed interface ExpressionNode {
         val op: (Double) -> Double,
         val symbol: String
     ) : ExpressionNode {
-        override fun evaluate(x: Double) = op(operand.evaluate(x))
+        override fun evaluate(x: Double, params: Map<String, Double>) = op(operand.evaluate(x, params))
     }
 }

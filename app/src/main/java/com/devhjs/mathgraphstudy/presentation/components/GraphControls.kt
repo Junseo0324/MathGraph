@@ -95,6 +95,26 @@ private fun FunctionListPanel(
             )
         }
 
+        if (state.parameters.isNotEmpty()) {
+            item {
+                Text(
+                    text = "매개변수",
+                    style = AppTextStyles.smallTextBold,
+                    color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                )
+            }
+            items(state.parameters, key = { "param-${it.name}" }) { parameter ->
+                ParameterSlider(
+                    parameter = parameter,
+                    isAnimating = state.animatingParameter == parameter.name,
+                    onValueChange = { onAction(GraphAction.OnParameterChange(parameter.name, it)) },
+                    onValueChangeFinished = { onAction(GraphAction.OnParameterChangeFinished(parameter.name)) },
+                    onToggleAnimation = { onAction(GraphAction.OnToggleParameterAnimation(parameter.name)) }
+                )
+            }
+        }
+
         item {
             OutlinedButton(
                 onClick = { onAction(GraphAction.OnOpenEditor(null)) },

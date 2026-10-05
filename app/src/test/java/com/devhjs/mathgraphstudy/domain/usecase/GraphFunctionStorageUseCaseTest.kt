@@ -4,7 +4,11 @@ import com.devhjs.mathgraphstudy.domain.error.DataError
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.Result
 import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
+import com.devhjs.mathgraphstudy.domain.model.Parameter
+import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.fake.FakeGraphFunctionRepository
+import com.devhjs.mathgraphstudy.fake.FakeParameterRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -14,8 +18,9 @@ import org.junit.Test
 class GraphFunctionStorageUseCaseTest {
 
     private val repository = FakeGraphFunctionRepository()
+    private val parameterRepository = FakeParameterRepository()
     private val observe = ObserveGraphFunctionsUseCase(repository)
-    private val save = SaveGraphFunctionUseCase(repository)
+    private val save = SaveGraphFunctionUseCase(repository, parameterRepository)
     private val delete = DeleteGraphFunctionUseCase(repository)
 
     private val function = GraphFunction(id = "1", node = VariableNode("x"), color = 0xFF42A5F5)
@@ -65,5 +70,35 @@ class GraphFunctionStorageUseCaseTest {
         assertEquals(Result.Error(DataError.Local.UNKNOWN), save(function))
         assertEquals(Result.Error(DataError.Local.UNKNOWN), delete(function.id))
         assertEquals(Result.Error(DataError.Local.UNKNOWN), observe().first())
+    }
+
+    @Test
+    fun testSaveCreatesMissingParameters() = runTest {
+        // Given: a 는 이미 값이 3 으로 저장되어 있고, 수식은 a·x + b
+        parameterRepository.upsertParameter(Parameter("a", 3.0))
+        val node = BinaryOpNode(
+            BinaryOpNode(VariableNode("a"), MathOperator.MULTIPLY, VariableNode("x")),
+            MathOperator.PLUS,
+            VariableNode("b")
+        )
+
+        // When: 저장
+        save(function.copy(node = node))
+
+        // Then: 기존 a 값은 유지, 새로 쓰인 b 는 기본값으로 생성
+        assertEquals(
+            listOf(Parameter("a", 3.0), Parameter("b", Parameter.DEFAULT_VALUE)),
+            parameterRepository.current.sortedBy { it.name }
+        )
+    }
+
+    @Test
+    fun testSaveParameterClampsValueToRange() = runTest {
+        // When: 범위(-10 ~ 10)를 넘는 값 저장
+        val result = SaveParameterUseCase(parameterRepository)(Parameter("k", 25.0))
+
+        // Then: 최대값으로 제한
+        assertEquals(Result.Success(Unit), result)
+        assertEquals(10.0, parameterRepository.current.single().value, 0.0)
     }
 }

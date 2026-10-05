@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 공유용 그래프 이미지 (캐시 디렉터리, 공유 후 다음 공유 때 덮어씀) -->
+    <cache-path name="shared_images" path="shared/" />
+</paths>
