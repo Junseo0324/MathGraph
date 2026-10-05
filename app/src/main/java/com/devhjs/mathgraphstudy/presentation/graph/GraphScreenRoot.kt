@@ -7,7 +7,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,13 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.devhjs.mathgraphstudy.presentation.license.OpenSourceLicenseScreen
 import com.devhjs.mathgraphstudy.util.AdManager
 
 @Composable
 fun GraphScreenRoot(
-    viewModel: GraphViewModel = viewModel()
+    viewModel: GraphViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -42,7 +42,10 @@ fun GraphScreenRoot(
         }
     }
     
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // 확대/이동 상태는 화면 구성(세로/가로/태블릿)이 바뀌어도 유지되도록 여기서 한 번만 생성
+    val viewport = rememberGraphViewportState()
 
     // 라이센스 화면을 표시할지 여부
     var showLicenses by remember { mutableStateOf(false) }
@@ -64,6 +67,7 @@ fun GraphScreenRoot(
             )
         } else if (isTablet) {
             GraphScreenTablet(
+                viewport = viewport,
                 state = state,
                 onAction = { action ->
                     if (action is GraphAction.OnOpenLicenses) {
@@ -75,6 +79,7 @@ fun GraphScreenRoot(
             )
         } else {
             GraphScreen(
+                viewport = viewport,
                 state = state,
                 onAction = { action ->
                     if (action is GraphAction.OnOpenLicenses) {

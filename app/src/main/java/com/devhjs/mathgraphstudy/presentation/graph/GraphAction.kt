@@ -14,8 +14,7 @@ sealed interface GraphAction {
     object OnSubmitFunction : GraphAction // 입력한 함수를 추가하거나, 편집 중인 함수를 교체
     data class OnRemoveFunction(val id: String) : GraphAction
     data class OnToggleVisibility(val id: String) : GraphAction
-    data class OnViewportChange(val scale: Float, val offsetX: Float, val offsetY: Float) : GraphAction
-    data class OnCanvasSizeChanged(val width: Float) : GraphAction
+    data class OnVisibleRangeChange(val startX: Double, val endX: Double) : GraphAction // 확대/이동이 멈춘 뒤 보이는 x 범위
     data class OnSelectIntersection(val point: Offset) : GraphAction // 교점 선택
     object OnDismissIntersectionInfo : GraphAction // 교점 정보 닫기
     object OnOpenLicenses : GraphAction

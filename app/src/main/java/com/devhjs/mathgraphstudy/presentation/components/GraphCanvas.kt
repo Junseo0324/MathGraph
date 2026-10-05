@@ -6,8 +6,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
@@ -21,7 +24,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
+import com.devhjs.mathgraphstudy.presentation.graph.GraphViewportState
+import com.devhjs.mathgraphstudy.presentation.graph.rememberGraphViewportState
 import com.devhjs.mathgraphstudy.presentation.math.GraphGridCalculator
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -29,57 +38,66 @@ import kotlin.math.sqrt
 private const val MIN_SCALE_FOR_INTERSECTIONS = 20f
 // 교점 선택을 위한 터치 허용 반경 (픽셀 단위)
 private const val INTERSECTION_TAP_RADIUS = 30f
+// 제스처가 멈춘 뒤 보이는 범위를 ViewModel 에 알리기까지 기다리는 시간
+private const val VISIBLE_RANGE_DEBOUNCE_MS = 150L
 
 /**
  * 수학 그래프를 렌더링하고 사용자의 제스처(줌, 이동, 터치)를 처리하는 캔버스 컴포넌트입니다.
  *
+ * 확대/이동 상태는 [viewport]에 직접 반영하고 그리기 단계에서만 읽으므로,
+ * 드래그 중에는 컴포지션 없이 캔버스만 다시 그려집니다.
+ *
  * @param modifier 컴포넌트의 레이아웃 수정자
+ * @param viewport 확대/이동 상태
  * @param functions 그릴 그래프 함수들의 리스트 (수식, 색상, 가시성 포함)
  * @param intersections 두 그래프 간의 교점 좌표 리스트
  * @param selectedIntersection 현재 사용자가 선택한 교점 (선택 시 좌표값 표시)
- * @param viewportScale 현재 화면의 줌 배율 (확대/축소 정도)
- * @param viewportOffsetX 현재 뷰포트의 X축 이동 거리 (Pan Offset)
- * @param viewportOffsetY 현재 뷰포트의 Y축 이동 거리 (Pan Offset)
- * @param onViewportChange 줌이나 이동이 발생했을 때 호출되는 콜백 (scale, offsetX, offsetY)
+ * @param onVisibleRangeChange 화면에 보이는 x 범위가 바뀌었을 때 호출 (제스처가 멈춘 뒤 디바운스)
  * @param onIntersectionSelected 교점을 터치했을 때 호출되는 콜백
  * @param onIntersectionDismiss 교점 선택을 해제할 때 호출되는 콜백 (빈 공간 터치 등)
- * @param onCanvasSizeChanged 캔버스 가로 크기(px)가 정해지거나 바뀔 때 호출되는 콜백
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun GraphCanvas(
     modifier: Modifier = Modifier,
+    viewport: GraphViewportState = rememberGraphViewportState(),
     functions: List<GraphFunction> = emptyList(),
     intersections: List<Offset> = emptyList(),
     selectedIntersection: Offset? = null,
-    viewportScale: Float = 15f,
-    viewportOffsetX: Float=15f,
-    viewportOffsetY: Float= 15f,
-    onViewportChange: (Float, Float, Float) -> Unit= { _, _, _ -> },
+    onVisibleRangeChange: (Double, Double) -> Unit = { _, _ -> },
     onIntersectionSelected: (Offset) -> Unit = {},
-    onIntersectionDismiss: () -> Unit = {},
-    onCanvasSizeChanged: (Float) -> Unit = {}
+    onIntersectionDismiss: () -> Unit = {}
 ) {
     // 제스처 감지 람다 내에서 최신 상태값을 참조하기 위해 rememberUpdatedState 사용
-    // (컴포지션이 다시 일어나지 않더라도 제스처 콜백 내에서는 최신 값을 사용 보장)
-    val currentScale by rememberUpdatedState(viewportScale)
-    val currentOffsetX by rememberUpdatedState(viewportOffsetX)
-    val currentOffsetY by rememberUpdatedState(viewportOffsetY)
-    val currentOnViewportChange by rememberUpdatedState(onViewportChange)
     val currentIntersections by rememberUpdatedState(intersections)
     val currentOnIntersectionSelected by rememberUpdatedState(onIntersectionSelected)
     val currentOnIntersectionDismiss by rememberUpdatedState(onIntersectionDismiss)
+    val currentOnVisibleRangeChange by rememberUpdatedState(onVisibleRangeChange)
 
-    val textPaint = Paint().asFrameworkPaint().apply {
-        isAntiAlias = true
-        textSize = 30f
-        color = android.graphics.Color.WHITE
-        textAlign = android.graphics.Paint.Align.CENTER
+    // 보이는 범위가 바뀌면 제스처가 잠시 멈췄을 때 한 번만 알림 (교점 재계산 빈도 제한)
+    LaunchedEffect(viewport) {
+        snapshotFlow { viewport.visibleXRange() }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .debounce(VISIBLE_RANGE_DEBOUNCE_MS)
+            .collect { range -> currentOnVisibleRangeChange(range.start, range.endInclusive) }
+    }
+
+    val textPaint = remember {
+        Paint().asFrameworkPaint().apply {
+            isAntiAlias = true
+            textSize = 30f
+            color = android.graphics.Color.WHITE
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
     }
     
     // 선택된 교점의 좌표 표시용 배경 페인트
-    val coordBgPaint = Paint().asFrameworkPaint().apply {
-        isAntiAlias = true
-        color = android.graphics.Color.argb(200, 40, 40, 40)
+    val coordBgPaint = remember {
+        Paint().asFrameworkPaint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.argb(200, 40, 40, 40)
+        }
     }
 
     Canvas(
@@ -88,40 +106,28 @@ fun GraphCanvas(
             // 격자/라벨/곡선이 캔버스 영역 밖(상태바, 입력 패널)으로 그려지지 않도록 자름
             .clipToBounds()
             .background(AppColors.BlackCharcoal)
-            .onSizeChanged { onCanvasSizeChanged(it.width.toFloat()) }
+            .onSizeChanged { viewport.onCanvasSizeChanged(it) }
             // 줌(Zoom) 및 팬(Pan) 제스처 처리
-            .pointerInput(Unit) {
+            .pointerInput(viewport) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
-                    // 줌 레벨 제한: 최소 10배 ~ 최대 500배
-                    val newScale = (currentScale * zoom).coerceIn(10f, 500f)
-                    val appliedZoom = newScale / currentScale
-
-                    // 손가락 중심(centroid) 아래의 그래프 좌표가 줌 전후로 같은 위치에 머물도록 원점을 보정
-                    // 화면 중심 기준 centroid 위치에서, 원점까지의 거리를 줌 배율만큼 늘이거나 줄임
-                    val anchorX = centroid.x - size.width / 2f
-                    val anchorY = centroid.y - size.height / 2f
-                    val newOffsetX = anchorX - (anchorX - currentOffsetX) * appliedZoom + pan.x
-                    val newOffsetY = anchorY - (anchorY - currentOffsetY) * appliedZoom + pan.y
-
-                    currentOnViewportChange(newScale, newOffsetX, newOffsetY)
+                    viewport.onGesture(centroid, pan, zoom)
                 }
             }
             // 탭(Tap) 제스처 처리 (교점 선택용)
-            .pointerInput(Unit) {
+            .pointerInput(viewport) {
                 detectTapGestures { tapOffset ->
+                    val scale = viewport.scale
                     // 줌 레벨이 충분히 확대되었을 때만 교점 탭 기능을 활성화
-                    if (currentScale >= MIN_SCALE_FOR_INTERSECTIONS) {
-                        val width = size.width.toFloat()
-                        val height = size.height.toFloat()
-                        // 현재 화면의 중심 좌표 계산
-                        val centerX = width / 2 + currentOffsetX
-                        val centerY = height / 2 + currentOffsetY
+                    if (scale >= MIN_SCALE_FOR_INTERSECTIONS) {
+                        // 현재 화면의 원점 좌표 계산
+                        val centerX = size.width / 2 + viewport.offsetX
+                        val centerY = size.height / 2 + viewport.offsetY
 
                         // 탭한 화면 위치에서 가장 가까운 교점 찾기 (유클리드 거리 계산)
                         val tappedIntersection = currentIntersections.find { point ->
                             // 교점 좌표(수학 좌표)를 화면 픽셀 좌표로 변환
-                            val px = (point.x * currentScale) + centerX
-                            val py = centerY - (point.y * currentScale)
+                            val px = (point.x * scale) + centerX
+                            val py = centerY - (point.y * scale)
 
                             // 터치한 위치와 교점 사이의 거리 계산
                             val distance =
@@ -139,10 +145,12 @@ fun GraphCanvas(
                 }
             }
     ) {
+        // 확대/이동 상태는 그리기 단계에서 읽음 -> 값이 바뀌면 다시 그리기만 발생
+        val viewportScale = viewport.scale
         val width = size.width
         val height = size.height
-        val centerX = width / 2 + viewportOffsetX
-        val centerY = height / 2 + viewportOffsetY
+        val centerX = width / 2 + viewport.offsetX
+        val centerY = height / 2 + viewport.offsetY
 
         val gridColor = AppColors.GridColor
         val axisColor = AppColors.TextPrimary
@@ -243,7 +251,7 @@ fun GraphCanvas(
             // 화면 가로 픽셀을 순회하며 y값 계산
             for (px in 0 until width.toInt() step dynamicStep) {
                 val x = (px - centerX) / viewportScale
-                val y = func.calculate(x.toDouble())
+                val y = func.evaluate(x.toDouble())
 
                 if (y.isFinite()) {
                     // 화면 밖으로 크게 벗어난 값은 화면 위아래 한 화면 높이까지로 제한 (float 오버플로 방지)

@@ -1,5 +1,10 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
+import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
+import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
+import com.devhjs.mathgraphstudy.domain.model.math.PowerNode
+import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
+import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
@@ -16,6 +21,7 @@ import com.devhjs.mathgraphstudy.presentation.components.GraphContentPortrait
 
 @Composable
 fun GraphScreen(
+    viewport: GraphViewportState = rememberGraphViewportState(),
     state: GraphState,
     onAction: (GraphAction) -> Unit
 ) {
@@ -46,26 +52,21 @@ fun GraphScreen(
     if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
         GraphCanvas(
             functions = state.functions,
-            viewportScale = state.viewportScale,
-            viewportOffsetX = state.viewportOffsetX,
-            viewportOffsetY = state.viewportOffsetY,
+            viewport = viewport,
             intersections = state.intersections,
             selectedIntersection = state.selectedIntersection,
-            onViewportChange = { scale, offsetX, offsetY ->
-                onAction(GraphAction.OnViewportChange(scale, offsetX, offsetY))
+            onVisibleRangeChange = { startX, endX ->
+                onAction(GraphAction.OnVisibleRangeChange(startX, endX))
             },
             onIntersectionSelected = { point ->
                 onAction(GraphAction.OnSelectIntersection(point))
             },
             onIntersectionDismiss = {
                 onAction(GraphAction.OnDismissIntersectionInfo)
-            },
-            onCanvasSizeChanged = { width ->
-                onAction(GraphAction.OnCanvasSizeChanged(width))
             }
         )
     } else {
-        GraphContentPortrait(state, onAction)
+        GraphContentPortrait(viewport = viewport, state = state, onAction = onAction)
     }
 }
 
@@ -74,8 +75,8 @@ fun GraphScreen(
 @Composable
 fun GraphScreenPreview() {
     val sampleFunctions = listOf(
-        GraphFunction(id = "1", expression = "x^2", visualNode = null, color = 0xFFFF0000),
-        GraphFunction(id = "2", expression = "sin(x)", visualNode = null, color = 0xFF0000FF)
+        GraphFunction(id = "1", node = PowerNode(VariableNode("x"), NumberNode("2")), color = 0xFFFF0000),
+        GraphFunction(id = "2", node = FunctionNode(MathFunction.SIN, VariableNode("x")), color = 0xFF0000FF)
     )
     val sampleState = GraphState(
         functions = sampleFunctions,

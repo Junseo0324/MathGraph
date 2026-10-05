@@ -1,9 +1,15 @@
 package com.devhjs.mathgraphstudy.presentation.graph
 
+import com.devhjs.mathgraphstudy.domain.error.DataError
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.domain.service.MathParser
+import com.devhjs.mathgraphstudy.domain.usecase.BuildFunctionNodeUseCase
 import com.devhjs.mathgraphstudy.domain.usecase.CalculateIntersectionsUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.DeleteGraphFunctionUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.ObserveGraphFunctionsUseCase
+import com.devhjs.mathgraphstudy.domain.usecase.SaveGraphFunctionUseCase
+import com.devhjs.mathgraphstudy.fake.FakeGraphFunctionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -22,13 +28,26 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class GraphViewModelTest {
 
+    private lateinit var repository: FakeGraphFunctionRepository
     private lateinit var viewModel: GraphViewModel
+
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
-        viewModel = GraphViewModel(MathParser(), CalculateIntersectionsUseCase())
+        Dispatchers.setMain(testDispatcher)
+        repository = FakeGraphFunctionRepository()
+        viewModel = createViewModel()
     }
+
+    private fun createViewModel() = GraphViewModel(
+        buildFunctionNodeUseCase = BuildFunctionNodeUseCase(MathParser()),
+        observeGraphFunctionsUseCase = ObserveGraphFunctionsUseCase(repository),
+        saveGraphFunctionUseCase = SaveGraphFunctionUseCase(repository),
+        deleteGraphFunctionUseCase = DeleteGraphFunctionUseCase(repository),
+        calculateIntersectionsUseCase = CalculateIntersectionsUseCase(),
+        defaultDispatcher = testDispatcher
+    )
 
     @After
     fun tearDown() {
@@ -51,7 +70,7 @@ class GraphViewModelTest {
         // Then: 함수가 추가되고 입력 패널은 닫힘
         val state = viewModel.state.value
         assertEquals(1, state.functions.size)
-        assertEquals(6.0, state.functions[0].calculate(3.0), 0.001)
+        assertEquals(6.0, state.functions[0].evaluate(3.0), 0.001)
         assertFalse(state.isEditorOpen)
     }
 
@@ -68,7 +87,7 @@ class GraphViewModelTest {
         val editing = viewModel.state.value
         assertTrue(editing.isEditorOpen)
         assertEquals(original.id, editing.editingFunctionId)
-        assertEquals(original.visualNode, editing.mathInput.rootNode)
+        assertEquals(original.node, editing.mathInput.rootNode)
         type("^", "2")
         viewModel.onAction(GraphAction.OnSubmitFunction)
 
@@ -76,7 +95,7 @@ class GraphViewModelTest {
         val edited = viewModel.state.value.functions.single()
         assertEquals(original.id, edited.id)
         assertEquals(original.color, edited.color)
-        assertEquals(9.0, edited.calculate(3.0), 0.001)
+        assertEquals(9.0, edited.evaluate(3.0), 0.001)
         assertNull(viewModel.state.value.editingFunctionId)
     }
 
@@ -111,7 +130,7 @@ class GraphViewModelTest {
 
         // Then: y = 1/(x-2) + 1
         val function = viewModel.state.value.functions.single()
-        assertEquals(2.0, function.calculate(3.0), 0.001)
+        assertEquals(2.0, function.evaluate(3.0), 0.001)
         assertEquals("1/x-2+1", function.expression)
     }
 
@@ -129,5 +148,52 @@ class GraphViewModelTest {
         assertTrue(event is GraphEvent.ShowError)
         assertTrue(viewModel.state.value.isEditorOpen)
         assertTrue(viewModel.state.value.functions.isEmpty())
+    }
+
+    @Test
+    fun testFunctionsAreRestoredFromStorage() {
+        // Given: 함수 하나를 추가
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+        type("x")
+        viewModel.onAction(GraphAction.OnSubmitFunction)
+
+        // When: 앱을 다시 켠 것처럼 ViewModel 을 새로 생성
+        val restored = createViewModel()
+
+        // Then: 저장소에서 목록을 다시 불러옴
+        assertEquals(viewModel.state.value.functions, restored.state.value.functions)
+        assertEquals(1, restored.state.value.functions.size)
+    }
+
+    @Test
+    fun testToggleVisibilityAndDelete() {
+        // Given: 함수 하나
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+        type("x")
+        viewModel.onAction(GraphAction.OnSubmitFunction)
+        val id = viewModel.state.value.functions.single().id
+
+        // When & Then: 숨기기
+        viewModel.onAction(GraphAction.OnToggleVisibility(id))
+        assertFalse(viewModel.state.value.functions.single().isVisible)
+
+        // When & Then: 삭제
+        viewModel.onAction(GraphAction.OnRemoveFunction(id))
+        assertTrue(viewModel.state.value.functions.isEmpty())
+    }
+
+    @Test
+    fun testSaveFailureSendsError() = runTest {
+        // Given: 저장소 쓰기 실패
+        viewModel.onAction(GraphAction.OnOpenEditor(null))
+        type("x")
+        repository.shouldFail = true
+
+        // When: 추가
+        viewModel.onAction(GraphAction.OnSubmitFunction)
+
+        // Then: 저장 실패 메시지
+        val event = viewModel.events.first()
+        assertEquals(GraphEvent.ShowError(DataError.Local.UNKNOWN.toMessage()), event)
     }
 }

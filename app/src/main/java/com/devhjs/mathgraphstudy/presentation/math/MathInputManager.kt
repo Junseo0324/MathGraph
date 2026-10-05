@@ -332,16 +332,15 @@ object MathInputManager {
             node is ParenNode || node is PowerNode
 
     /**
-     * 수식의 가장 오른쪽 끝 노드까지의 경로를 반환합니다.
-     * 기존 수식을 불러와 편집할 때 커서를 수식 끝에 두기 위해 사용합니다.
+     * 기존 수식을 불러와 편집할 때 커서를 둘 "수식 끝" 위치의 경로를 반환합니다.
+     *
+     * 이항 연산은 오른쪽으로 따라 내려가되, 함수/괄호/거듭제곱/부호는 안으로 들어가지 않고 그 노드 전체를 선택합니다.
+     * 예: "2x + sin x" 에서는 `sin x` 전체가 선택되어, 바로 "+ 1" 을 입력하면 "2x + sin x + 1" 이 됩니다.
+     * (숫자/변수가 끝이면 그 노드가 선택되어 바로 이어서 입력하거나 지울 수 있습니다)
      */
-    fun lastLeafPath(node: VisualMathNode): List<Int> {
+    fun endOfExpressionPath(node: VisualMathNode): List<Int> {
         return when (node) {
-            is BinaryOpNode -> listOf(1) + lastLeafPath(node.right)
-            is PowerNode -> listOf(1) + lastLeafPath(node.exponent)
-            is FunctionNode -> listOf(0) + lastLeafPath(node.arg)
-            is ParenNode -> listOf(0) + lastLeafPath(node.inner)
-            is NegateNode -> listOf(0) + lastLeafPath(node.operand)
+            is BinaryOpNode -> listOf(1) + endOfExpressionPath(node.right)
             else -> emptyList()
         }
     }

@@ -2,6 +2,8 @@ package com.devhjs.mathgraphstudy.domain.usecase
 
 
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.math.toVisualNode
+import com.devhjs.mathgraphstudy.domain.service.MathParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,21 +12,23 @@ import kotlin.math.abs
 class CalculateIntersectionsUseCaseTest {
 
     private val calculateIntersections = CalculateIntersectionsUseCase()
+    private val parser = MathParser()
+
+    /** 수식 문자열을 그래프 함수용 수식 트리로 변환 */
+    private fun node(expression: String) = parser.parseToNode(expression).toVisualNode()
 
     @Test
     fun testLinearIntersection() {
         // Given: 교차하는 두 직선 함수 준비 (y = x, y = -x + 2)
         val f1 = GraphFunction(
             id = "1",
-            expression = "x",
-            calculate = { x -> x },
+            node = node("x"),
             color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
-            expression = "-x + 2",
-            calculate = { x -> -x + 2.0 },
+            node = node("-x + 2"),
             color = 0xFF0000FF,
             isVisible = true
         )
@@ -43,15 +47,13 @@ class CalculateIntersectionsUseCaseTest {
         // Given: 평행한 두 직선 함수 준비 (y = x, y = x + 2)
         val f1 = GraphFunction(
             id = "1",
-            expression = "x",
-            calculate = { x -> x },
+            node = node("x"),
             color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
-            expression = "x + 2",
-            calculate = { x -> x + 2.0 },
+            node = node("x + 2"),
             color = 0xFF0000FF,
             isVisible = true
         )
@@ -68,15 +70,13 @@ class CalculateIntersectionsUseCaseTest {
         // Given: 이차 함수와 상수 함수 준비 (y = x^2, y = 4)
         val f1 = GraphFunction(
             id = "1",
-            expression = "x^2",
-            calculate = { x -> x * x },
+            node = node("x^2"),
             color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
-            expression = "4",
-            calculate = { 4.0 },
+            node = node("4"),
             color = 0xFF0000FF,
             isVisible = true
         )
@@ -99,15 +99,13 @@ class CalculateIntersectionsUseCaseTest {
         // Given: 교차하지만 하나가 보이지 않는 두 함수 준비
         val f1 = GraphFunction(
             id = "1",
-            expression = "x",
-            calculate = { x -> x },
+            node = node("x"),
             color = 0xFF000000,
             isVisible = true
         )
         val f2 = GraphFunction(
             id = "2",
-            expression = "-x",
-            calculate = { x -> -x },
+            node = node("-x"),
             color = 0xFF0000FF,
             isVisible = false // 보이지 않음
         )

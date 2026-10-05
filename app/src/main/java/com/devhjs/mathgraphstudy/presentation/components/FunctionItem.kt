@@ -2,7 +2,6 @@ package com.devhjs.mathgraphstudy.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
+import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
@@ -33,7 +33,7 @@ import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 
 @Composable
 fun FunctionItem(
-    function: GraphFunction = GraphFunction(),
+    function: GraphFunction,
     onEdit: () -> Unit = {},
     onToggleVisibility: () -> Unit = {},
     onDelete: () -> Unit = {}
@@ -61,30 +61,23 @@ fun FunctionItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                if (function.visualNode != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "y =",
-                            style = AppTextStyles.smallTextRegular,
-                            color = AppColors.TextSecondary,
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
-                        MathNodeView(
-                            node = function.visualNode,
-                            currentPath = emptyList(),
-                            focusPath = listOf(-1),
-                            // 목록에서는 편집 포커스 대신 항목 전체 클릭(onEdit)으로 처리
-                            onFocusRequest = { onEdit() }
-                        )
-                    }
-                } else {
-                    Text(
-                        text = "y = ${function.expression}",
-                        style = AppTextStyles.normalTextRegular,
-                        color = AppColors.TextPrimary
-                    )
-                }
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "y =",
+                    style = AppTextStyles.smallTextRegular,
+                    color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+                MathNodeView(
+                    node = function.node,
+                    currentPath = emptyList(),
+                    focusPath = listOf(-1),
+                    // 목록에서는 편집 포커스 대신 항목 전체 클릭(onEdit)으로 처리
+                    onFocusRequest = { onEdit() }
+                )
             }
 
             IconButton(onClick = onToggleVisibility) {
@@ -109,5 +102,7 @@ fun FunctionItem(
 @Preview
 @Composable
 private fun FunctionItemPreview() {
-    FunctionItem()
+    FunctionItem(
+        function = GraphFunction(id = "1", node = VariableNode("x"), color = 0xFF42A5F5)
+    )
 }

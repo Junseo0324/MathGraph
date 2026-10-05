@@ -40,23 +40,23 @@ class CalculateIntersectionsUseCase @Inject constructor() {
 
                 var x = rangeStart
                 while (x < rangeEnd) {
-                    val y1_a = f1.calculate(x) // 함수 1의 높이
-                    val y2_a = f2.calculate(x) // 함수 2의 높이
+                    val y1_a = f1.evaluate(x) // 함수 1의 높이
+                    val y2_a = f2.evaluate(x) // 함수 2의 높이
                     val diff_a = y1_a - y2_a // 차이 (a)
 
                     val nextX = x + step
-                    val y1_b = f1.calculate(nextX) // 함수 1의 높이
-                    val y2_b = f2.calculate(nextX) // 함수 2의 높이
+                    val y1_b = f1.evaluate(nextX) // 함수 1의 높이
+                    val y2_b = f2.evaluate(nextX) // 함수 2의 높이
                     val diff_b = y1_b - y2_b // 차이 (b)
 
                     // 그 전 step 과 비교해서 부호가 다르면 교차했는지 확인
                     if (diff_a * diff_b <= 0.0) {
                         // 교차했는지 확인
                         val rootX = bisection(f1, f2, x, nextX) // 이분 탐색으로 교차점 x 찾기
-                        val rootY = f1.calculate(rootX) // 그때의 y 값
+                        val rootY = f1.evaluate(rootX) // 그때의 y 값
 
                         // 실제 교차점이 있는지 체크하기
-                        if (abs(f1.calculate(rootX) - f2.calculate(rootX)) < 1e-3) {
+                        if (abs(f1.evaluate(rootX) - f2.evaluate(rootX)) < 1e-3) {
                             // 리스트에 이미 가까운 값이 있다면 등록하지 않음. (중복 방지)
                             val existing = intersections.find {
                                 abs(it.first - rootX) < 0.2 && abs(it.second - rootY) < 0.2
@@ -89,11 +89,11 @@ class CalculateIntersectionsUseCase @Inject constructor() {
         var mid = (low + high) / 2.0
 
         repeat(20) { // Max iterations
-            val diffMid = f1.calculate(mid) - f2.calculate(mid)
+            val diffMid = f1.evaluate(mid) - f2.evaluate(mid)
 
             if (abs(diffMid) < tol) return mid
 
-            val diffLow = f1.calculate(low) - f2.calculate(low)
+            val diffLow = f1.evaluate(low) - f2.evaluate(low)
             if (diffLow * diffMid < 0) {
                 high = mid
             } else {

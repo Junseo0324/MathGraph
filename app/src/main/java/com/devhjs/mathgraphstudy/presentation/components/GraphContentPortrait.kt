@@ -1,5 +1,7 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
+import com.devhjs.mathgraphstudy.presentation.graph.GraphViewportState
+import com.devhjs.mathgraphstudy.presentation.graph.rememberGraphViewportState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,7 @@ import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
 @Composable
 fun GraphContentPortrait(
+    viewport: GraphViewportState = rememberGraphViewportState(),
     state: GraphState = GraphState(),
     onAction: (GraphAction) -> Unit= {}
 ) {
@@ -29,22 +32,17 @@ fun GraphContentPortrait(
         ) {
             GraphCanvas(
                 functions = state.functions,
-                viewportScale = state.viewportScale,
-                viewportOffsetX = state.viewportOffsetX,
-                viewportOffsetY = state.viewportOffsetY,
+                viewport = viewport,
                 intersections = state.intersections,
                 selectedIntersection = state.selectedIntersection,
-                onViewportChange = { scale, offsetX, offsetY ->
-                    onAction(GraphAction.OnViewportChange(scale, offsetX, offsetY))
+                onVisibleRangeChange = { startX, endX ->
+                    onAction(GraphAction.OnVisibleRangeChange(startX, endX))
                 },
                 onIntersectionSelected = { point ->
                     onAction(GraphAction.OnSelectIntersection(point))
                 },
                 onIntersectionDismiss = {
                     onAction(GraphAction.OnDismissIntersectionInfo)
-                },
-                onCanvasSizeChanged = { width ->
-                    onAction(GraphAction.OnCanvasSizeChanged(width))
                 }
             )
         }

@@ -126,4 +126,18 @@ class MathInputManagerTest {
         assertEquals(ParenNode(PlaceholderNode), state.rootNode)
         assertEquals(listOf(0), state.focusPath)
     }
+
+    @Test
+    fun testEndOfExpressionPathSelectsWholeTrailingFunction() {
+        // Given: 2x + sin x
+        val state = type("2", "x", "+", "sin", "x")
+
+        // When: 편집용 끝 위치에서 "+ 1" 입력
+        val path = MathInputManager.endOfExpressionPath(state.rootNode)
+        val edited = type("+", "1", from = MathInputState(state.rootNode, path))
+
+        // Then: sin 안이 아니라 수식 끝에 덧붙음
+        assertEquals(listOf(1), path)
+        assertEquals("2x+sin x+1", edited.rootNode.toDisplayString())
+    }
 }
