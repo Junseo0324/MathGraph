@@ -7,12 +7,13 @@ import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
 import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
+import com.devhjs.mathgraphstudy.domain.model.math.NegateNode
 import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
+import com.devhjs.mathgraphstudy.domain.model.math.ParenNode
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.PowerNode
 import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
-import com.devhjs.mathgraphstudy.domain.model.math.enums.BeginnerFunctionType
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
 import com.devhjs.mathgraphstudy.domain.model.math.toDisplayString
@@ -34,7 +35,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.math.pow
-import kotlin.random.Random
 
 @HiltViewModel
 class GraphViewModel @Inject constructor(
@@ -69,7 +69,28 @@ class GraphViewModel @Inject constructor(
                 }
             }
             GraphAction.OnToggleMode -> {
-                _state.update { it.copy(isBeginnerMode = !it.isBeginnerMode) }
+                _state.update { it.copy(isTemplateMode = !it.isTemplateMode) }
+            }
+            is GraphAction.OnOpenEditor -> {
+                val target = action.functionId?.let { id -> _state.value.functions.find { it.id == id } }
+                val targetNode = target?.visualNode
+                _state.update {
+                    it.copy(
+                        isEditorOpen = true,
+                        editingFunctionId = target?.id,
+                        // 기존 함수는 직접 입력 모드에서 수식을 그대로 불러와 편집
+                        isTemplateMode = if (target != null) false else it.isTemplateMode,
+                        mathInput = if (targetNode != null) {
+                            MathInputState(rootNode = targetNode, focusPath = MathInputManager.lastLeafPath(targetNode))
+                        } else {
+                            MathInputState()
+                        },
+                        beginnerCoefficients = emptyMap()
+                    )
+                }
+            }
+            GraphAction.OnCloseEditor -> {
+                _state.update { it.copy(isEditorOpen = false, editingFunctionId = null, mathInput = MathInputState()) }
             }
             is GraphAction.OnBeginnerTypeChanged -> {
                 _state.update { it.copy(
@@ -84,21 +105,28 @@ class GraphViewModel @Inject constructor(
                     it.copy(beginnerCoefficients = newCoefficients)
                 }
             }
-            GraphAction.OnAddFunction -> {
+            GraphAction.OnSubmitFunction -> {
                 val currentState = _state.value
                 val parsed: (Double) -> Double
                 val exprDisplay: String
 
                 var visualNode: VisualMathNode? = null
 
-                if (currentState.isBeginnerMode) {
-                    exprDisplay = constructBeginnerExpression(currentState)
+                if (currentState.isTemplateMode) {
+                    val expression = currentState.beginnerFunctionType
+                        .buildExpression(currentState.beginnerCoefficients)
+                    if (expression == null) {
+                        sendError("계수는 숫자로 입력해주세요.")
+                        return
+                    }
                     try {
-                        val exprNode = mathParser.parseToNode(exprDisplay)
+                        val exprNode = mathParser.parseToNode(expression)
                         parsed = mathParser.evaluate(exprNode)
 
                         visualNode = exprNode.toVisualNode()
+                        exprDisplay = visualNode.toDisplayString()
                     } catch (e: Exception) {
+                        sendError("수식을 만들 수 없습니다. 계수를 확인해주세요.")
                         return
                     }
                 } else {
@@ -110,35 +138,51 @@ class GraphViewModel @Inject constructor(
                         exprDisplay = root.toDisplayString() 
                         visualNode = root
                     } catch (e: IllegalStateException) {
+                        sendError("비어 있는 칸을 모두 채워주세요.")
                         return 
                     } catch (e: Exception) {
+                        sendError("올바르지 않은 수식입니다.")
                         return
                     }
                 }
                 
                 if (exprDisplay.isBlank()) return
 
-                val newFunction = GraphFunction(
+                val editingFunction = currentState.functions.find { it.id == currentState.editingFunctionId }
+                val newFunction = editingFunction?.copy(
+                    // 편집: id, 색상, 표시 여부는 유지하고 수식만 교체
+                    expression = exprDisplay,
+                    visualNode = visualNode,
+                    calculate = parsed
+                ) ?: GraphFunction(
                     id = System.currentTimeMillis().toString(),
                     expression = exprDisplay,
                     visualNode = visualNode,
-                    color = generateRandomColor(),
+                    color = nextFunctionColor(currentState.functions),
                     isVisible = true,
                     calculate = parsed
                 )
 
                 _state.update { state: GraphState ->
                      state.copy(
-                        functions = state.functions + newFunction,
-                        mathInput = if (state.isBeginnerMode) state.mathInput else MathInputState(),
-                        beginnerCoefficients = if (state.isBeginnerMode) emptyMap() else state.beginnerCoefficients
+                        functions = if (editingFunction != null) {
+                            state.functions.map { f -> if (f.id == editingFunction.id) newFunction else f }
+                        } else {
+                            state.functions + newFunction
+                        },
+                        isEditorOpen = false,
+                        editingFunctionId = null,
+                        mathInput = MathInputState(),
+                        beginnerCoefficients = emptyMap()
                     )
                 }
 
-                functionAddedCount++
-                if (functionAddedCount % 5 == 0) {
-                    viewModelScope.launch {
-                        _events.send(GraphEvent.ShowInterstitialAd)
+                if (editingFunction == null) {
+                    functionAddedCount++
+                    if (functionAddedCount % 5 == 0) {
+                        viewModelScope.launch {
+                            _events.send(GraphEvent.ShowInterstitialAd)
+                        }
                     }
                 }
 
@@ -169,6 +213,11 @@ class GraphViewModel @Inject constructor(
                 }
                 triggerIntersectionCalculation()
             }
+            is GraphAction.OnCanvasSizeChanged -> {
+                if (_state.value.canvasWidth == action.width) return
+                _state.update { it.copy(canvasWidth = action.width) }
+                triggerIntersectionCalculation()
+            }
             is GraphAction.OnSelectIntersection -> {
                 _state.update { it.copy(selectedIntersection = action.point) }
             }
@@ -181,21 +230,11 @@ class GraphViewModel @Inject constructor(
     }
 
     /**
-     * 초보자 모드에서 사용자가 입력한 계수 값들(a, b, c, d)을 바탕으로
-     * 파싱 가능한 수식 문자열(예: "(1)*x + (2)")을 생성합니다.
+     * 사용자에게 보여줄 오류 메시지를 일회성 이벤트로 전달합니다.
      */
-    private fun constructBeginnerExpression(state: GraphState): String {
-        val coeffs = state.beginnerCoefficients
-        val a = coeffs["a"] ?: "1"
-        val b = coeffs["b"] ?: "0"
-        val c = coeffs["c"] ?: "0"
-        val d = coeffs["d"] ?: "0"
-
-        return when (state.beginnerFunctionType) {
-            BeginnerFunctionType.LINEAR -> "($a)*x + ($b)"
-            BeginnerFunctionType.QUADRATIC -> "($a)*x^2 + ($b)*x + ($c)"
-            BeginnerFunctionType.CUBIC -> "($a)*x^3 + ($b)*x^2 + ($c)*x + ($d)"
-            BeginnerFunctionType.RATIONAL -> "($a)/($b) * x + ($c)"
+    private fun sendError(message: String) {
+        viewModelScope.launch {
+            _events.send(GraphEvent.ShowError(message))
         }
     }
 
@@ -221,8 +260,9 @@ class GraphViewModel @Inject constructor(
      */
     private suspend fun calculateIntersections(state: GraphState): List<Offset> = withContext(Dispatchers.Default) {
         val buffer = 5.0
-        val startX = ((-540f - state.viewportOffsetX) / state.viewportScale) - buffer
-        val endX = ((540f - state.viewportOffsetX) / state.viewportScale) + buffer
+        val halfWidth = state.canvasWidth / 2
+        val startX = ((-halfWidth - state.viewportOffsetX) / state.viewportScale) - buffer
+        val endX = ((halfWidth - state.viewportOffsetX) / state.viewportScale) + buffer
 
         val intersections = calculateIntersectionsUseCase(
             functions = state.functions,
@@ -236,18 +276,13 @@ class GraphViewModel @Inject constructor(
     }
 
     /**
-     * 그래프 선을 그릴 때 사용할 랜덤 색상을 ARGB Long 값으로 생성합니다.
+     * 그래프 선을 그릴 때 사용할 색상을 팔레트에서 고릅니다.
+     * 어두운 배경에서 잘 보이는 색 중 아직 쓰이지 않은 색을 우선 사용합니다.
      */
-    private fun generateRandomColor(): Long {
-        val alpha = 0xFF
-        val red = Random.nextInt(256)
-        val green = Random.nextInt(256)
-        val blue = Random.nextInt(256)
-        
-        return (alpha.toLong() shl 24) or 
-               (red.toLong() shl 16) or 
-               (green.toLong() shl 8) or 
-               blue.toLong()
+    private fun nextFunctionColor(functions: List<GraphFunction>): Long {
+        val usedColors = functions.map { it.color }.toSet()
+        return FUNCTION_COLORS.firstOrNull { it !in usedColors }
+            ?: FUNCTION_COLORS[functions.size % FUNCTION_COLORS.size]
     }
 
     /**
@@ -288,6 +323,8 @@ class GraphViewModel @Inject constructor(
                  val exponentNode = this.exponent.toExpressionNode()
                  ExpressionNode.BinaryOp(baseNode, exponentNode, { a, b -> a.pow(b) }, "^")
             }
+            is ParenNode -> this.inner.toExpressionNode()
+            is NegateNode -> ExpressionNode.UnaryOp(this.operand.toExpressionNode(), { x: Double -> -x }, MathParser.NEGATE)
             PlaceholderNode -> throw IllegalStateException("Placeholder in expression")
         }
     }
@@ -329,6 +366,13 @@ class GraphViewModel @Inject constructor(
                     if (op == MathOperator.PLUS && isRightZero) return leftViz
                     if (op == MathOperator.PLUS && isLeftZero) return rightViz
 
+                    // x + (-3) -> x - 3
+                    if (op == MathOperator.PLUS) {
+                        rightViz.withoutLeadingNegation()?.let {
+                            return BinaryOpNode(left = leftViz, op = MathOperator.MINUS, right = it)
+                        }
+                    }
+
                     if (op == MathOperator.MINUS && isRightZero) return leftViz
 
                     if (op == MathOperator.MULTIPLY && isLeftOne) return rightViz
@@ -345,6 +389,9 @@ class GraphViewModel @Inject constructor(
                 }
             }
             is ExpressionNode.UnaryOp -> {
+                if (this.symbol == MathParser.NEGATE) {
+                    return NegateNode(this.operand.toVisualNode())
+                }
                 val func = when (this.symbol) {
                     "sqrt" -> MathFunction.SQRT
                     "sin" -> MathFunction.SIN
@@ -361,5 +408,31 @@ class GraphViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * 음수 부호로 시작하는 노드라면 부호를 뗀 노드를 반환합니다. (예: -3 -> 3, (-3)x -> 3x)
+     * 부호로 시작하지 않으면 null을 반환합니다.
+     */
+    private fun VisualMathNode.withoutLeadingNegation(): VisualMathNode? {
+        return when {
+            this is NegateNode -> operand
+            this is BinaryOpNode && (op == MathOperator.MULTIPLY || op == MathOperator.DIVIDE) ->
+                left.withoutLeadingNegation()?.let { copy(left = it) }
+            else -> null
+        }
+    }
+
+    private companion object {
+        val FUNCTION_COLORS = listOf(
+            0xFF42A5F5, // Blue
+            0xFFEF5350, // Red
+            0xFF66BB6A, // Green
+            0xFFFFCA28, // Amber
+            0xFFAB47BC, // Purple
+            0xFF26C6DA, // Cyan
+            0xFFFF7043, // Deep Orange
+            0xFFEC407A  // Pink
+        )
     }
 }

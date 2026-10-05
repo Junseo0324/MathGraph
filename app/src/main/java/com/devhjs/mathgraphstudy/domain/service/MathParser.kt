@@ -6,7 +6,8 @@ package com.devhjs.mathgraphstudy.domain.service
  * 주요 기능:
  * 1. 암시적 곱셈 처리 (예: 2x -> 2*x)
  * 2. Shunting-yard 알고리즘을 통한 후위 표기법 변환
- * 3. AST(Abstract Syntax Tree) 구성 및 계산
+ * 3. 단항 마이너스 처리 (예: -x, 2^-x, (-3)x)
+ * 4. AST(Abstract Syntax Tree) 구성 및 계산
  */
 import com.devhjs.mathgraphstudy.domain.model.math.ExpressionNode
 import javax.inject.Inject
@@ -22,6 +23,11 @@ import kotlin.math.tan
 
 class MathParser @Inject constructor() {
 
+    companion object {
+        /** 단항 마이너스(부호 반전)를 나타내는 내부 토큰 */
+        const val NEGATE = "neg"
+    }
+
 
     /**
      * 수식 문자열을 계산 트리(ExpressionNode) 구조로 변환합니다.
@@ -29,7 +35,7 @@ class MathParser @Inject constructor() {
      */
     fun parseToNode(expression: String): ExpressionNode {
         val tokens = tokenize(expression)
-        val processedTokens = insertImplicitMultiplication(tokens)
+        val processedTokens = markUnaryMinus(insertImplicitMultiplication(tokens))
         val rpn = shuntingYard(processedTokens)
         return buildAST(rpn)
     }
@@ -68,6 +74,11 @@ class MathParser @Inject constructor() {
                     }
                     stack.add(ExpressionNode.UnaryOp(operand, op, token))
                 }
+                // 단항 마이너스일 경우 -> 값 하나를 꺼내 부호를 반전
+                token == NEGATE -> {
+                    val operand = stack.removeAt(stack.lastIndex)
+                    stack.add(ExpressionNode.UnaryOp(operand, { -it }, NEGATE))
+                }
                 // 연산자일 경우 -> right, left를 꺼내 binaryOp로 넣음
                 isOperator(token) -> {
                     val right = stack.removeAt(stack.lastIndex)
@@ -84,6 +95,7 @@ class MathParser @Inject constructor() {
                 }
             }
         }
+        require(stack.size == 1) { "Invalid expression" }
         return stack.last()
     }
 
@@ -104,6 +116,8 @@ class MathParser @Inject constructor() {
                 isNumber(token) || token == "x" || token == "e" || token == "pi" -> outputQueue.add(token)
                 isFunction(token) -> operatorStack.add(token)
                 token == "(" -> operatorStack.add(token)
+                // 전위 단항 연산자는 앞의 연산자를 꺼내지 않고 바로 쌓음
+                token == NEGATE -> operatorStack.add(token)
                 token == ")" -> {
                     // '(' 연산자가 나올 때까지 쌓인 연산자를 outputQueue에 옮김
                     while (operatorStack.isNotEmpty() && operatorStack.last() != "(") {
@@ -150,6 +164,26 @@ class MathParser @Inject constructor() {
                 result.add("*")
             }
             result.add(curr)
+        }
+        return result
+    }
+
+    /**
+     * [단항 마이너스 처리]
+     * 수식의 맨 앞, 여는 괄호 뒤, 다른 연산자 뒤에 오는 "-"는 뺄셈이 아니라 부호이므로
+     * [NEGATE] 토큰으로 바꿉니다. 같은 위치의 "+"는 의미가 없으므로 제거합니다.
+     * 예: ["(", "-", "2", ")"] -> ["(", "neg", "2", ")"]
+     */
+    fun markUnaryMinus(tokens: List<String>): List<String> {
+        val result = mutableListOf<String>()
+        for (token in tokens) {
+            val prev = result.lastOrNull()
+            val isUnaryPosition = prev == null || prev == "(" || prev == NEGATE || isOperator(prev)
+            when {
+                token == "-" && isUnaryPosition -> result.add(NEGATE)
+                token == "+" && isUnaryPosition -> Unit
+                else -> result.add(token)
+            }
         }
         return result
     }
@@ -256,13 +290,15 @@ class MathParser @Inject constructor() {
      * 연산자의 우선순위 숫자를 반환합니다. 클수록 우선순위가 높습니다.
      * 1: +, -
      * 2: *, /
-     * 3: ^
+     * 3: 단항 마이너스 (-x^2 = -(x^2) 이 되도록 ^ 보다 낮음)
+     * 4: ^
      */
     private fun getPrecedence(op: String): Int {
         return when (op) {
             "+", "-" -> 1
             "*", "/" -> 2
-            "^" -> 3
+            NEGATE -> 3
+            "^" -> 4
             else -> 0
         }
     }

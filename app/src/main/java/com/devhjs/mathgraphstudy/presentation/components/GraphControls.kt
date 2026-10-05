@@ -1,19 +1,38 @@
 package com.devhjs.mathgraphstudy.presentation.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,66 +41,77 @@ import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 import com.devhjs.mathgraphstudy.presentation.graph.GraphAction
 import com.devhjs.mathgraphstudy.presentation.graph.GraphState
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * 그래프 아래(태블릿은 옆)에 표시되는 조작 패널입니다.
+ * 평소에는 함수 목록을, 함수를 추가하거나 편집할 때는 입력 패널을 보여줍니다.
+ */
 @Composable
 fun GraphControls(
     modifier: Modifier = Modifier,
     state: GraphState = GraphState(),
-    onAction: (GraphAction) -> Unit= {},
+    onAction: (GraphAction) -> Unit = {},
+) {
+    if (state.isEditorOpen) {
+        FunctionEditorPanel(state, onAction, modifier)
+    } else {
+        FunctionListPanel(state, onAction, modifier)
+    }
+}
+
+/**
+ * 추가한 함수 목록입니다. 항목을 누르면 해당 함수를 편집합니다.
+ */
+@Composable
+private fun FunctionListPanel(
+    state: GraphState,
+    onAction: (GraphAction) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier
-            .background(AppColors.DarkSurface),
-        contentPadding = PaddingValues(16.dp)
+        modifier = modifier.background(AppColors.DarkSurface),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                GraphModeToggle(
-                    isBeginnerMode = state.isBeginnerMode,
-                    onModeChange = { onAction(GraphAction.OnToggleMode) },
-                    modifier = Modifier.fillMaxWidth(0.9f) // 전체 너비의 90% 정도 차지하게
+        if (state.functions.isEmpty()) {
+            item {
+                Text(
+                    text = "함수를 추가해 그래프를 그려보세요",
+                    style = AppTextStyles.smallTextRegular,
+                    color = AppColors.TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        if (state.isBeginnerMode) {
-            item {
-                BeginnerModeInput(state, onAction)
-            }
-        } else {
-            stickyHeader {
-                AdvancedModeEquationBox(state, onAction)
-            }
-            item {
-                AdvancedModeKeypad(state, onAction)
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "함수 목록",
-                style = AppTextStyles.normalTextBold,
-                color = AppColors.TextPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        items(state.functions) { function ->
+        items(state.functions, key = { it.id }) { function ->
             FunctionItem(
                 function = function,
+                onEdit = { onAction(GraphAction.OnOpenEditor(function.id)) },
                 onToggleVisibility = { onAction(GraphAction.OnToggleVisibility(function.id)) },
                 onDelete = { onAction(GraphAction.OnRemoveFunction(function.id)) }
             )
         }
 
+        item {
+            OutlinedButton(
+                onClick = { onAction(GraphAction.OnOpenEditor(null)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.PrimaryGold)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("함수 추가", style = AppTextStyles.normalTextBold)
+            }
+        }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
             TextButton(
                 onClick = { onAction(GraphAction.OnOpenLicenses) },
                 modifier = Modifier.fillMaxWidth()
@@ -92,13 +122,107 @@ fun GraphControls(
                     fontSize = 10.sp
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+/**
+ * 함수 입력/편집 패널입니다.
+ * 상단에 입력 방식(직접 입력/템플릿) 선택과 닫기, 그 아래에 입력창과 고정 키패드를 배치합니다.
+ */
+@Composable
+private fun FunctionEditorPanel(
+    state: GraphState,
+    onAction: (GraphAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BackHandler { onAction(GraphAction.OnCloseEditor) }
+
+    Column(
+        modifier = modifier
+            .background(AppColors.DarkSurface)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onAction(GraphAction.OnCloseEditor) }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "닫기",
+                    tint = AppColors.TextSecondary
+                )
+            }
+            if (state.editingFunctionId == null) {
+                GraphModeToggle(
+                    isTemplateMode = state.isTemplateMode,
+                    onModeChange = { onAction(GraphAction.OnToggleMode) },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                Text(
+                    text = "함수 편집",
+                    style = AppTextStyles.normalTextBold,
+                    color = AppColors.TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        if (state.isTemplateMode) {
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                BeginnerModeInput(state, onAction)
+            }
+            Button(
+                onClick = { onAction(GraphAction.OnSubmitFunction) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.PrimaryGold,
+                    contentColor = AppColors.BlackCharcoal
+                )
+            ) {
+                Text("그래프에 추가", style = AppTextStyles.normalTextBold)
+            }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    AdvancedModeEquationBox(state, onAction)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                FilledIconButton(
+                    onClick = { onAction(GraphAction.OnSubmitFunction) },
+                    modifier = Modifier.height(64.dp).width(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = AppColors.PrimaryGold,
+                        contentColor = AppColors.BlackCharcoal
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = if (state.editingFunctionId == null) "추가" else "저장"
+                    )
+                }
+            }
+            AdvancedModeKeypad(onAction)
         }
     }
 }
 
 @Preview
 @Composable
-private fun GraphControlsPreview() {
+private fun GraphControlsListPreview() {
     GraphControls()
+}
+
+@Preview(heightDp = 480)
+@Composable
+private fun GraphControlsEditorPreview() {
+    GraphControls(state = GraphState(isEditorOpen = true))
 }

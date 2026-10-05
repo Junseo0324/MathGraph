@@ -34,20 +34,22 @@ import com.devhjs.mathgraphstudy.presentation.math.MathNodeView
 @Composable
 fun FunctionItem(
     function: GraphFunction = GraphFunction(),
+    onEdit: () -> Unit = {},
     onToggleVisibility: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     Card(
+        onClick = onEdit,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = AppColors.SurfaceCard
         )
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(start = 12.dp, top = 4.dp, bottom = 4.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -63,7 +65,7 @@ fun FunctionItem(
                 if (function.visualNode != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "f(x) =",
+                            text = "y =",
                             style = AppTextStyles.smallTextRegular,
                             color = AppColors.TextSecondary,
                             modifier = Modifier.padding(end = 4.dp)
@@ -72,7 +74,8 @@ fun FunctionItem(
                             node = function.visualNode,
                             currentPath = emptyList(),
                             focusPath = listOf(-1),
-                            onFocusRequest = {}
+                            // 목록에서는 편집 포커스 대신 항목 전체 클릭(onEdit)으로 처리
+                            onFocusRequest = { onEdit() }
                         )
                     }
                 } else {

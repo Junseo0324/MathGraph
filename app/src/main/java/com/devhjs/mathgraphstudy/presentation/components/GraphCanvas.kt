@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import com.devhjs.mathgraphstudy.domain.model.GraphFunction
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
@@ -41,6 +43,7 @@ private const val INTERSECTION_TAP_RADIUS = 30f
  * @param onViewportChange 줌이나 이동이 발생했을 때 호출되는 콜백 (scale, offsetX, offsetY)
  * @param onIntersectionSelected 교점을 터치했을 때 호출되는 콜백
  * @param onIntersectionDismiss 교점 선택을 해제할 때 호출되는 콜백 (빈 공간 터치 등)
+ * @param onCanvasSizeChanged 캔버스 가로 크기(px)가 정해지거나 바뀔 때 호출되는 콜백
  */
 @Composable
 fun GraphCanvas(
@@ -53,7 +56,8 @@ fun GraphCanvas(
     viewportOffsetY: Float= 15f,
     onViewportChange: (Float, Float, Float) -> Unit= { _, _, _ -> },
     onIntersectionSelected: (Offset) -> Unit = {},
-    onIntersectionDismiss: () -> Unit = {}
+    onIntersectionDismiss: () -> Unit = {},
+    onCanvasSizeChanged: (Float) -> Unit = {}
 ) {
     // 제스처 감지 람다 내에서 최신 상태값을 참조하기 위해 rememberUpdatedState 사용
     // (컴포지션이 다시 일어나지 않더라도 제스처 콜백 내에서는 최신 값을 사용 보장)
@@ -81,15 +85,23 @@ fun GraphCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
+            // 격자/라벨/곡선이 캔버스 영역 밖(상태바, 입력 패널)으로 그려지지 않도록 자름
+            .clipToBounds()
             .background(AppColors.BlackCharcoal)
+            .onSizeChanged { onCanvasSizeChanged(it.width.toFloat()) }
             // 줌(Zoom) 및 팬(Pan) 제스처 처리
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
+                detectTransformGestures { centroid, pan, zoom, _ ->
                     // 줌 레벨 제한: 최소 10배 ~ 최대 500배
                     val newScale = (currentScale * zoom).coerceIn(10f, 500f)
-                    // 현재 위치에서 드래그한 만큼 이동 (Pan)
-                    val newOffsetX = currentOffsetX + pan.x
-                    val newOffsetY = currentOffsetY + pan.y
+                    val appliedZoom = newScale / currentScale
+
+                    // 손가락 중심(centroid) 아래의 그래프 좌표가 줌 전후로 같은 위치에 머물도록 원점을 보정
+                    // 화면 중심 기준 centroid 위치에서, 원점까지의 거리를 줌 배율만큼 늘이거나 줄임
+                    val anchorX = centroid.x - size.width / 2f
+                    val anchorY = centroid.y - size.height / 2f
+                    val newOffsetX = anchorX - (anchorX - currentOffsetX) * appliedZoom + pan.x
+                    val newOffsetY = anchorY - (anchorY - currentOffsetY) * appliedZoom + pan.y
 
                     currentOnViewportChange(newScale, newOffsetX, newOffsetY)
                 }
@@ -225,33 +237,28 @@ fun GraphCanvas(
         
         functions.filter { it.isVisible }.forEach { func ->
             val path = Path()
-            var started = false
+            // 직전 점의 화면 y 좌표 (NaN 이면 경로가 끊긴 상태)
+            var prevPy = Float.NaN
             
             // 화면 가로 픽셀을 순회하며 y값 계산
             for (px in 0 until width.toInt() step dynamicStep) {
                 val x = (px - centerX) / viewportScale
                 val y = func.calculate(x.toDouble())
 
-                // 유효한 값이고 화면 범위 내에서 너무 벗어나지 않은 경우에만 선을 그림
-                if (y.isFinite() && abs(y) < 1000) {
-                    val py = centerY - (y * viewportScale).toFloat()
+                if (y.isFinite()) {
+                    // 화면 밖으로 크게 벗어난 값은 화면 위아래 한 화면 높이까지로 제한 (float 오버플로 방지)
+                    val py = (centerY - y * viewportScale).toFloat().coerceIn(-height, 2 * height)
                     
-                    if (!started) {
-                        path.moveTo(px.toFloat(), py)
-                        started = true
+                    // 불연속점 처리 (값이 갑자기 튀는 경우 선을 잇지 않음 - 예: 탄젠트 함수)
+                    if (!prevPy.isNaN() && abs(py - prevPy) < height) {
+                        path.lineTo(px.toFloat(), py)
                     } else {
-                        // 불연속점 처리 (값이 갑자기 튀는 경우 선을 잇지 않음 - 예: 탄젠트 함수)
-                        val prevX = (px - dynamicStep - centerX) / viewportScale
-                        val prevY = func.calculate(prevX.toDouble())
-                        if (prevY.isFinite() && abs(py - (centerY - (prevY * viewportScale).toFloat())) < height) {
-                             path.lineTo(px.toFloat(), py)
-                        } else {
-                             path.moveTo(px.toFloat(), py)
-                        }
+                        path.moveTo(px.toFloat(), py)
                     }
+                    prevPy = py
                 } else {
                     // 무한대나 유효하지 않은 값이면 경로 끊기
-                    started = false
+                    prevPy = Float.NaN
                 }
             }
             

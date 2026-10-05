@@ -59,6 +59,9 @@ fun GraphScreen(
             },
             onIntersectionDismiss = {
                 onAction(GraphAction.OnDismissIntersectionInfo)
+            },
+            onCanvasSizeChanged = { width ->
+                onAction(GraphAction.OnCanvasSizeChanged(width))
             }
         )
     } else {

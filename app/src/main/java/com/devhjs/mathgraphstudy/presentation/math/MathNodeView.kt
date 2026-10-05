@@ -29,13 +29,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devhjs.mathgraphstudy.domain.model.math.BinaryOpNode
 import com.devhjs.mathgraphstudy.domain.model.math.FunctionNode
+import com.devhjs.mathgraphstudy.domain.model.math.NegateNode
 import com.devhjs.mathgraphstudy.domain.model.math.NumberNode
+import com.devhjs.mathgraphstudy.domain.model.math.ParenNode
 import com.devhjs.mathgraphstudy.domain.model.math.PlaceholderNode
 import com.devhjs.mathgraphstudy.domain.model.math.PowerNode
 import com.devhjs.mathgraphstudy.domain.model.math.VariableNode
 import com.devhjs.mathgraphstudy.domain.model.math.VisualMathNode
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathFunction
 import com.devhjs.mathgraphstudy.domain.model.math.enums.MathOperator
+import com.devhjs.mathgraphstudy.domain.model.math.startsWithDigit
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 import com.devhjs.mathgraphstudy.presentation.designsystem.AppTextStyles
 
@@ -93,11 +96,17 @@ fun MathNodeView(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MathNodeView(node.left, currentPath + 0, focusPath, onFocusRequest)
-                        if (node.op == MathOperator.MULTIPLY) {
+                        if (node.op == MathOperator.MULTIPLY && !node.right.startsWithDigit()) {
+                            // 암시적 곱셈 (예: 2x, 3sin x) 은 기호 생략
                             Spacer(modifier = Modifier.padding(horizontal = 2.dp))
                         } else {
+                            val symbol = when (node.op) {
+                                MathOperator.MULTIPLY -> "×"
+                                MathOperator.MINUS -> "−"
+                                else -> node.op.symbol
+                            }
                             Text(
-                                text = " ${node.op.symbol} ",
+                                text = " $symbol ",
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
@@ -150,6 +159,12 @@ fun MathNodeView(
                             }
                         }
                     }
+                } else if (node.func == MathFunction.ABS) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "|")
+                        MathNodeView(node.arg, currentPath + 0, focusPath, onFocusRequest)
+                        Text(text = "|")
+                    }
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = node.func.symbol)
@@ -173,6 +188,21 @@ fun MathNodeView(
                             MathNodeView(node.exponent, currentPath + 1, focusPath, onFocusRequest)
                         }
                     }
+                }
+            }
+
+            is ParenNode -> {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "(")
+                    MathNodeView(node.inner, currentPath + 0, focusPath, onFocusRequest)
+                    Text(text = ")")
+                }
+            }
+
+            is NegateNode -> {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "−")
+                    MathNodeView(node.operand, currentPath + 0, focusPath, onFocusRequest)
                 }
             }
 

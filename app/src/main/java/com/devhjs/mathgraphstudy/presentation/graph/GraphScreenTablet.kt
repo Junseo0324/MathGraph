@@ -57,6 +57,9 @@ fun GraphScreenTablet(
                 },
                 onIntersectionDismiss = {
                     onAction(GraphAction.OnDismissIntersectionInfo)
+                },
+                onCanvasSizeChanged = { width ->
+                    onAction(GraphAction.OnCanvasSizeChanged(width))
                 }
             )
 

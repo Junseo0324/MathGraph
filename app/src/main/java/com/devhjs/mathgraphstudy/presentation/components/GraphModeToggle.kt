@@ -25,7 +25,7 @@ import com.devhjs.mathgraphstudy.presentation.designsystem.AppColors
 
 @Composable
 fun GraphModeToggle(
-    isBeginnerMode: Boolean,
+    isTemplateMode: Boolean,
     onModeChange: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -41,7 +41,7 @@ fun GraphModeToggle(
         val tabWidth = totalWidth / 2
 
         val indicatorOffset by animateDpAsState(
-            targetValue = if (isBeginnerMode) tabWidth else 0.dp,
+            targetValue = if (isTemplateMode) tabWidth else 0.dp,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
                 stiffness = Spring.StiffnessMedium
@@ -64,17 +64,17 @@ fun GraphModeToggle(
                 .zIndex(2f)
         ) {
             ToggleTabItem(
-                text = "일반 모드",
-                isSelected = !isBeginnerMode,
+                text = "직접 입력",
+                isSelected = !isTemplateMode,
                 modifier = Modifier.width(tabWidth),
-                onClick = { if (isBeginnerMode) onModeChange() }
+                onClick = { if (isTemplateMode) onModeChange() }
             )
-            // 초보자 모드 탭
+            // 템플릿 탭
             ToggleTabItem(
-                text = "초보자 모드",
-                isSelected = isBeginnerMode,
+                text = "템플릿",
+                isSelected = isTemplateMode,
                 modifier = Modifier.width(tabWidth),
-                onClick = { if (!isBeginnerMode) onModeChange() }
+                onClick = { if (!isTemplateMode) onModeChange() }
             )
         }
     }
@@ -87,7 +87,7 @@ fun GraphModeToggle(
 private fun GraphModeTogglePreview() {
     Box(modifier = Modifier.padding(16.dp)) {
         GraphModeToggle(
-            isBeginnerMode = false,
+            isTemplateMode = false,
             onModeChange = {},
             modifier = Modifier.width(300.dp)
         )

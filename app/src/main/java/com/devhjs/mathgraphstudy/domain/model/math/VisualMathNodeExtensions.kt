@@ -14,7 +14,7 @@ fun VisualMathNode.toDisplayString(): String {
         is NumberNode -> value
         is VariableNode -> name
         is BinaryOpNode -> {
-            val isImplicit = op == MathOperator.MULTIPLY && left is NumberNode && right is VariableNode
+            val isImplicit = op == MathOperator.MULTIPLY && !right.startsWithDigit()
             if (isImplicit) {
                 "${left.toDisplayString()}${right.toDisplayString()}"
             } else {
@@ -22,15 +22,30 @@ fun VisualMathNode.toDisplayString(): String {
             }
         }
         is FunctionNode -> {
-            if (func == MathFunction.SQRT) {
-                "${func.symbol}(${arg.toDisplayString()})"
-            } else {
-                "${func.symbol} ${arg.toDisplayString()}"
+            when (func) {
+                MathFunction.SQRT -> "${func.symbol}(${arg.toDisplayString()})"
+                MathFunction.ABS -> "|${arg.toDisplayString()}|"
+                else -> "${func.symbol} ${arg.toDisplayString()}"
             }
         }
         is PowerNode -> {
             "${base.toDisplayString()}^${exponent.toDisplayString()}"
         }
+        is ParenNode -> "(${inner.toDisplayString()})"
+        is NegateNode -> "-${operand.toDisplayString()}"
         PlaceholderNode -> "?"
+    }
+}
+
+/**
+ * 화면에 표시했을 때 숫자(또는 음수 부호)로 시작하는 노드인지 확인합니다.
+ * 곱셈 기호를 생략하면 "2 3"처럼 숫자가 붙어 보이는 경우를 판단하는 데 사용합니다.
+ */
+fun VisualMathNode.startsWithDigit(): Boolean {
+    return when (this) {
+        is NumberNode, is NegateNode -> true
+        is PowerNode -> base.startsWithDigit()
+        is BinaryOpNode -> left.startsWithDigit()
+        else -> false
     }
 }

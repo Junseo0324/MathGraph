@@ -12,6 +12,7 @@ composeBom = "2024.09.00"
 lifecycleViewModelCompose = "2.8.0"
 hilt = "2.51.1"
 aboutlibraries = "11.2.3"
+coroutines = "1.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 aboutlibraries-compose = { group = "com.mikepenz", name = "aboutlibraries-compose", version.ref = "aboutlibraries" }
 
 [plugins]

@@ -135,4 +135,28 @@ class MathParserTest {
         // Then: 트리를 계산했을 때 결과가 7.0이어야 함
         assertEquals(7.0, node.evaluate(0.0), 0.001) 
     }
+
+    @Test
+    fun testUnaryMinus() {
+        // Given: 음수 부호가 포함된 수식들
+        val expr1 = "-x"
+        val expr2 = "(-2)*x + (3)"
+        val expr3 = "-x^2"
+        val expr4 = "2^-x"
+        val expr5 = "x - -1"
+
+        // When & Then: 부호가 올바른 우선순위로 적용되어야 함
+        assertEquals(-3.0, parser.parseToNode(expr1).evaluate(3.0), 0.001)
+        assertEquals(-3.0, parser.parseToNode(expr2).evaluate(3.0), 0.001)
+        assertEquals(-9.0, parser.parseToNode(expr3).evaluate(3.0), 0.001) // -(x^2)
+        assertEquals(0.125, parser.parseToNode(expr4).evaluate(3.0), 0.001)
+        assertEquals(4.0, parser.parseToNode(expr5).evaluate(3.0), 0.001)
+    }
+
+    @Test(expected = Exception::class)
+    fun testInvalidExpressionThrows() {
+        // Given & When: 피연산자가 부족한 수식
+        // Then: 조용히 잘못된 값을 내지 않고 예외가 발생해야 함
+        parser.parseToNode("2 +")
+    }
 }

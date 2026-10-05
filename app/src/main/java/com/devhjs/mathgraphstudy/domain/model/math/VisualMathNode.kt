@@ -36,5 +36,15 @@ data class PowerNode(
     val exponent: VisualMathNode
 ) : VisualMathNode
 
+/** 괄호 노드 (예: (x + 1)). 내부 수식(inner)을 하나의 그룹으로 묶습니다. */
+data class ParenNode(
+    val inner: VisualMathNode
+) : VisualMathNode
+
+/** 음수 부호 노드 (예: -x). 피연산자(operand)의 부호를 반전합니다. */
+data class NegateNode(
+    val operand: VisualMathNode
+) : VisualMathNode
+
 /** 아직 입력되지 않은 빈 칸 (예: sin(?)). 사용자의 입력을 기다리는 상태를 나타냅니다. */
 data object PlaceholderNode : VisualMathNode

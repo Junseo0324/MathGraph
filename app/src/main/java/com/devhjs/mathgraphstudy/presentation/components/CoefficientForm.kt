@@ -54,7 +54,7 @@ fun CoefficientForm(
                 CoefficientInput(state, "d", onAction)
             }
              BeginnerFunctionType.RATIONAL -> {
-                 // y = (a/b)x + c
+                 // y = a/(x+b) + c
                  Column(
                      horizontalAlignment = Alignment.CenterHorizontally,
                      modifier = Modifier.padding(end = 4.dp)
@@ -62,13 +62,16 @@ fun CoefficientForm(
                      CoefficientInput(state, "a", onAction)
                      androidx.compose.foundation.layout.Box(
                          modifier = Modifier
-                             .width(60.dp)
+                             .width(100.dp)
                              .height(1.dp)
                              .background(AppColors.TextPrimary)
                      )
-                     CoefficientInput(state, "b", onAction)
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         Text("x +", style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
+                         CoefficientInput(state, "b", onAction)
+                     }
                  }
-                 Text("x +", style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
+                 Text("+", style = AppTextStyles.normalTextRegular, color = AppColors.TextPrimary)
                  CoefficientInput(state, "c", onAction)
              }
         }
