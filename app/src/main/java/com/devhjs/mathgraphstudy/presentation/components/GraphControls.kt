@@ -68,7 +68,7 @@ private fun FunctionListPanel(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.background(AppColors.DarkSurface),
+        modifier = modifier.background(AppColors.Panel),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -140,7 +140,7 @@ private fun FunctionEditorPanel(
 
     Column(
         modifier = modifier
-            .background(AppColors.DarkSurface)
+            .background(AppColors.Panel)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -184,7 +184,7 @@ private fun FunctionEditorPanel(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppColors.PrimaryGold,
-                    contentColor = AppColors.BlackCharcoal
+                    contentColor = AppColors.OnPrimary
                 )
             ) {
                 Text("그래프에 추가", style = AppTextStyles.normalTextBold)
@@ -201,7 +201,7 @@ private fun FunctionEditorPanel(
                     shape = RoundedCornerShape(12.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = AppColors.PrimaryGold,
-                        contentColor = AppColors.BlackCharcoal
+                        contentColor = AppColors.OnPrimary
                     )
                 ) {
                     Icon(

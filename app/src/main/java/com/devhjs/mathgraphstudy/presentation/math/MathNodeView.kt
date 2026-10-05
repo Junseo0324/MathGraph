@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -209,7 +208,7 @@ fun MathNodeView(
             PlaceholderNode -> {
                 Box(
                     modifier = Modifier
-                        .border(1.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
+                        .border(1.dp, AppColors.TextSecondary, shape = RoundedCornerShape(4.dp))
                         // PlaceholderNode is already wrapped by the baseModifier in the outer Box,
                         // but we keep its padding. No need for an additional clickable here.
                         .padding(horizontal = 8.dp, vertical = 4.dp)

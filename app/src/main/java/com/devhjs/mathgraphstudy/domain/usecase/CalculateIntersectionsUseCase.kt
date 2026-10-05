@@ -19,17 +19,21 @@ class CalculateIntersectionsUseCase @Inject constructor() {
      * @param functions 검사할 함수 목록 (isVisible이 true인 것만 계산)
      * @param rangeStart 검사할 x축 시작 범위 (Viewport minX)
      * @param rangeEnd 검사할 x축 끝 범위 (Viewport maxX)
-     * @param step 구간을 나눌 간격 (기본값 0.1). 작을수록 정밀하지만 성능이 떨어질 수 있습니다.
+     * @param step 구간을 나눌 간격. 기본값은 범위를 [SEARCH_STEPS]개로 나눈 값이라
+     *             확대(범위가 좁음)할수록 촘촘하게, 축소할수록 성기게 탐색합니다.
      * @return 교차점의 (x, y) 좌표 리스트
      */
     operator fun invoke(
         functions: List<GraphFunction>,
         rangeStart: Double,
         rangeEnd: Double,
-        step: Double = 0.1
+        step: Double = (rangeEnd - rangeStart) / SEARCH_STEPS
     ): List<Pair<Double, Double>> {
         val visibleFunctions = functions.filter { it.isVisible }
-        if (visibleFunctions.size < 2) return emptyList()
+        if (visibleFunctions.size < 2 || step <= 0.0) return emptyList()
+
+        // 교점 판정/중복 판정 허용 오차도 탐색 간격에 비례 (확대 시 가까운 교점도 구분)
+        val tolerance = step * 2
 
         val intersections = mutableListOf<Pair<Double, Double>>()
 
@@ -56,10 +60,10 @@ class CalculateIntersectionsUseCase @Inject constructor() {
                         val rootY = f1.evaluate(rootX) // 그때의 y 값
 
                         // 실제 교차점이 있는지 체크하기
-                        if (abs(f1.evaluate(rootX) - f2.evaluate(rootX)) < 1e-3) {
+                        if (abs(f1.evaluate(rootX) - f2.evaluate(rootX)) < tolerance) {
                             // 리스트에 이미 가까운 값이 있다면 등록하지 않음. (중복 방지)
                             val existing = intersections.find {
-                                abs(it.first - rootX) < 0.2 && abs(it.second - rootY) < 0.2
+                                abs(it.first - rootX) < tolerance && abs(it.second - rootY) < tolerance
                             }
                             if (existing == null) {
                                 intersections.add(rootX to rootY)
@@ -88,7 +92,7 @@ class CalculateIntersectionsUseCase @Inject constructor() {
         var high = b
         var mid = (low + high) / 2.0
 
-        repeat(20) { // Max iterations
+        repeat(50) { // Max iterations
             val diffMid = f1.evaluate(mid) - f2.evaluate(mid)
 
             if (abs(diffMid) < tol) return mid
@@ -102,5 +106,10 @@ class CalculateIntersectionsUseCase @Inject constructor() {
             mid = (low + high) / 2.0
         }
         return mid
+    }
+
+    companion object {
+        /** 기본 탐색 시 범위를 나누는 구간 수 */
+        const val SEARCH_STEPS = 2000
     }
 }

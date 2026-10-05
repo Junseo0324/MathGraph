@@ -45,7 +45,7 @@ fun BeginnerModeInput(
                     },
                     colors = SuggestionChipDefaults.suggestionChipColors(
                         containerColor = if (isSelected) AppColors.PrimaryGoldVariant else Color.Transparent,
-                        labelColor = if (isSelected) AppColors.BlackCharcoal else AppColors.TextPrimary
+                        labelColor = if (isSelected) AppColors.OnPrimary else AppColors.TextPrimary
                     ),
                     border = BorderStroke(
                         width = 1.dp,

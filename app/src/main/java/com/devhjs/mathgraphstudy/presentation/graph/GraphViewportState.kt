@@ -68,6 +68,28 @@ class GraphViewportState(
         scale = newScale
     }
 
+    /** 화면 중앙을 기준으로 확대/축소합니다. (버튼용) */
+    fun zoomBy(factor: Float) {
+        val center = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
+        onGesture(centroid = center, pan = Offset.Zero, zoom = factor)
+    }
+
+    /** 원점이 화면 중앙에 오도록 하고 기본 배율로 되돌립니다. */
+    fun reset() {
+        scale = DEFAULT_SCALE
+        offsetX = 0f
+        offsetY = 0f
+    }
+
+    /** 그래프 x 좌표 -> 화면 x 좌표(px) */
+    fun toScreenX(x: Double): Float = (canvasSize.width / 2f + offsetX + x * scale).toFloat()
+
+    /** 그래프 y 좌표 -> 화면 y 좌표(px). 화면은 아래로 갈수록 커지므로 부호가 반대 */
+    fun toScreenY(y: Double): Float = (canvasSize.height / 2f + offsetY - y * scale).toFloat()
+
+    /** 화면 x 좌표(px) -> 그래프 x 좌표 */
+    fun toGraphX(px: Float): Double = ((px - canvasSize.width / 2f - offsetX) / scale).toDouble()
+
     /** 화면에 보이는 x 범위. 캔버스 측정 전에는 null */
     fun visibleXRange(): ClosedFloatingPointRange<Double>? {
         if (canvasSize == IntSize.Zero) return null
@@ -79,8 +101,8 @@ class GraphViewportState(
 
     companion object {
         const val DEFAULT_SCALE = 40f
-        const val MIN_SCALE = 10f
-        const val MAX_SCALE = 500f
+        const val MIN_SCALE = 1f // 1단위 = 1px (약 ±500 범위가 보임)
+        const val MAX_SCALE = 100_000f // 1단위 = 10만px (눈금 0.001 단위)
 
         val Saver = listSaver<GraphViewportState, Float>(
             save = { listOf(it.scale, it.offsetX, it.offsetY) },

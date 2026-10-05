@@ -45,12 +45,13 @@ fun GraphScreenTablet(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = AppColors.BlackCharcoal
+        color = AppColors.Background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             GraphCanvas(
                 functions = state.functions,
                 viewport = viewport,
+                controlsAlignment = Alignment.TopStart, // 오른쪽 패널에 가리지 않도록
                 intersections = state.intersections,
                 selectedIntersection = state.selectedIntersection,
                 onVisibleRangeChange = { startX, endX ->
@@ -84,7 +85,7 @@ fun GraphScreenTablet(
                         Icon(
                             imageVector = if (isPanelVisible.value) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = if (isPanelVisible.value) "Close Panel" else "Open Panel",
-                            tint = AppColors.BlackCharcoal
+                            tint = AppColors.OnPrimary
                         )
                     }
                 }

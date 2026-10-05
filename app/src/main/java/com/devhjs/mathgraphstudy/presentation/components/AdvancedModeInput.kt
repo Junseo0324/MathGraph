@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +43,7 @@ fun AdvancedModeEquationBox(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .background(AppColors.BlackCharcoal, RoundedCornerShape(12.dp))
+            .background(AppColors.Background, RoundedCornerShape(12.dp))
             .border(1.dp, AppColors.PrimaryGold.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
             .clickable { onAction(GraphAction.OnFocusChange(emptyList())) }
             .padding(horizontal = 12.dp),
@@ -165,11 +164,11 @@ private fun KeypadButton(
     modifier: Modifier = Modifier
 ) {
     val (containerColor, contentColor) = when (key.type) {
-        KeyType.NUMBER -> Color(0xFF34343A) to AppColors.TextPrimary
-        KeyType.VARIABLE -> Color(0xFF2A2A30) to AppColors.PrimaryGold
-        KeyType.OPERATOR -> Color(0xFF2A2A30) to AppColors.BlueAccent
-        KeyType.FUNCTION -> Color(0xFF26262B) to AppColors.TextPrimary
-        KeyType.ACTION -> Color(0xFF26262B) to AppColors.TextSecondary
+        KeyType.NUMBER -> AppColors.KeyNumber to AppColors.TextPrimary
+        KeyType.VARIABLE -> AppColors.KeyOperator to AppColors.PrimaryGold
+        KeyType.OPERATOR -> AppColors.KeyOperator to AppColors.BlueAccent
+        KeyType.FUNCTION -> AppColors.KeyFunction to AppColors.TextPrimary
+        KeyType.ACTION -> AppColors.KeyFunction to AppColors.TextSecondary
     }
 
     Surface(
@@ -194,7 +193,7 @@ private fun KeypadButton(
 private fun AdvancedModeInputPreview() {
     Column(
         modifier = Modifier
-            .background(AppColors.DarkSurface)
+            .background(AppColors.Panel)
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
