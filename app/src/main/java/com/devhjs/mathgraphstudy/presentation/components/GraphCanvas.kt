@@ -291,10 +291,18 @@ private class GraphPaints {
         isAntiAlias = true
     }
 
+    // 좌표 표시 상자 테두리 (밝은 배경에서도 상자가 구분되도록)
+    val tooltipBorder = Paint().asFrameworkPaint().apply {
+        isAntiAlias = true
+        style = android.graphics.Paint.Style.STROKE
+        strokeWidth = 2f
+    }
+
     fun applyColors(colors: AppColorScheme) {
         centerText.color = colors.textPrimary.toArgb()
         rightText.color = colors.textPrimary.toArgb()
         tooltipBackground.color = colors.tooltipBackground.toArgb()
+        tooltipBorder.color = colors.borderColor.toArgb()
     }
 }
 
@@ -336,7 +344,7 @@ private fun DrawScope.drawGrid(viewport: GraphViewportState, colors: AppColorSch
 
     val canvas = drawContext.canvas.nativeCanvas
     // x 눈금: x축 바로 아래, 축이 화면 밖이면 위/아래 가장자리
-    val xLabelY = (originY + 40f).coerceIn(30f + LABEL_MARGIN, height - LABEL_MARGIN)
+    val xLabelY = (originY + 40f).clampSafely(30f + LABEL_MARGIN, height - LABEL_MARGIN)
     xLines.forEach { x ->
         if (abs(x) < gridStep / 2) return@forEach // 원점은 생략
         canvas.drawText(GraphGridCalculator.formatLabel(x, gridStep), viewport.toScreenX(x), xLabelY, paints.centerText)
@@ -346,7 +354,7 @@ private fun DrawScope.drawGrid(viewport: GraphViewportState, colors: AppColorSch
         if (abs(y) < gridStep / 2) return@forEach
         val label = GraphGridCalculator.formatLabel(y, gridStep)
         val textWidth = paints.rightText.measureText(label)
-        val labelX = (originX - 12f).coerceIn(textWidth + LABEL_MARGIN, width - LABEL_MARGIN)
+        val labelX = (originX - 12f).clampSafely(textWidth + LABEL_MARGIN, width - LABEL_MARGIN)
         canvas.drawText(label, labelX, viewport.toScreenY(y) + 10f, paints.rightText)
     }
 }
@@ -457,13 +465,13 @@ private fun DrawScope.drawCoordinateLabel(
     prefix: String? = null
 ) {
     val decimals = floor(log10(scale.toDouble())).toInt().coerceIn(2, 6)
-    val coordinates = "(%.${decimals}f, %.${decimals}f)".format(x, y)
+    val coordinates = "(${formatCoordinate(x, decimals)}, ${formatCoordinate(y, decimals)})"
     val text = if (prefix != null) "$prefix $coordinates" else coordinates
     val textWidth = paints.centerText.measureText(text)
     val padding = 10f
     val boxHeight = 44f
 
-    val centerX = point.x.coerceIn(textWidth / 2 + padding, size.width - textWidth / 2 - padding)
+    val centerX = point.x.clampSafely(textWidth / 2 + padding, size.width - textWidth / 2 - padding)
     val above = point.y - 24f - boxHeight > 0
     val top = if (above) point.y - 24f - boxHeight else point.y + 24f
 
@@ -473,6 +481,12 @@ private fun DrawScope.drawCoordinateLabel(
         centerX + textWidth / 2 + padding, top + boxHeight,
         12f, 12f,
         paints.tooltipBackground
+    )
+    canvas.drawRoundRect(
+        centerX - textWidth / 2 - padding, top,
+        centerX + textWidth / 2 + padding, top + boxHeight,
+        12f, 12f,
+        paints.tooltipBorder
     )
     canvas.drawText(text, centerX, top + boxHeight - 13f, paints.centerText)
 }
@@ -532,3 +546,19 @@ private fun KeyPoint.Type.label(): String = when (this) {
 private fun GraphCanvasPreview() {
     GraphCanvas()
 }
+
+/**
+ * 좌표 값을 소수 [decimals] 자리로 표시합니다.
+ * 반올림하면 0 이 되는 아주 작은 음수가 "-0.00" 으로 보이지 않도록 0 으로 맞춥니다.
+ */
+private fun formatCoordinate(value: Double, decimals: Int): String {
+    val rounded = "%.${decimals}f".format(value)
+    return if (rounded.trimStart('-').all { it == '0' || it == '.' }) "%.${decimals}f".format(0.0) else rounded
+}
+
+/**
+ * [min] ~ [max] 로 제한하되, 캔버스가 아주 작아 범위가 뒤집히면(max < min) [min] 을 씁니다.
+ * (예: 키보드가 올라와 그래프 영역 높이가 수십 px 로 줄어든 경우 coerceIn 은 예외를 던짐)
+ */
+private fun Float.clampSafely(min: Float, max: Float): Float =
+    if (max < min) min else coerceIn(min, max)
