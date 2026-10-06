@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 앱 아이콘 전경: 굵은 포물선 + x축과 만나는 근(흰 점). 런처에 보이는 가운데 영역 안에 배치 -->
+<!-- 테마 아이콘(Android 13+)용 단색 전경. 색은 시스템이 입힘 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -8,16 +8,15 @@
     <path
         android:pathData="M25,56H83"
         android:strokeWidth="3"
-        android:strokeColor="#3814161C"
+        android:strokeColor="#59000000"
         android:strokeLineCap="round" />
     <path
         android:pathData="M29,42 Q54,92 79,42"
         android:strokeWidth="8.5"
-        android:strokeColor="#FF14161C"
+        android:strokeColor="#FF000000"
         android:strokeLineCap="round" />
     <path
         android:pathData="M64.2,56a6.4,6.4 0,1 0,12.8 0a6.4,6.4 0,1 0,-12.8 0"
-        android:fillColor="#FFFFFFFF"
         android:strokeWidth="3.2"
-        android:strokeColor="#FF14161C" />
+        android:strokeColor="#FF000000" />
 </vector>
